@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/types';
 import { Bot, Send, User, XCircle, MicIcon, Image, Paperclip } from 'lucide-react';
+import { doctors } from '../data/doctors';
 
 const initialMessages: ChatMessage[] = [
   {
@@ -50,6 +50,18 @@ const ChatBot: React.FC = () => {
     ]
   };
 
+  // Medical specialties mapping
+  const specialtiesMapping: Record<string, string[]> = {
+    cardiologist: ['heart', 'chest pain', 'blood pressure', 'cardiovascular'],
+    neurologist: ['headache', 'migraine', 'brain', 'nerve', 'stroke'],
+    pediatrician: ['child', 'baby', 'infant', 'children'],
+    orthopedic: ['bone', 'joint', 'fracture', 'back pain', 'knee'],
+    dermatologist: ['skin', 'rash', 'acne', 'hair loss'],
+    gynecologist: ['pregnancy', 'menstrual', 'women health', 'period'],
+    psychiatrist: ['depression', 'anxiety', 'mental health', 'stress'],
+    endocrinologist: ['diabetes', 'thyroid', 'hormone', 'fatigue']
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -84,24 +96,72 @@ const ChatBot: React.FC = () => {
     }, 1500);
   };
 
+  const findDoctorsBySpecialty = (specialty: string): string => {
+    const matchingDoctors = doctors.filter(
+      doctor => doctor.specialty.toLowerCase() === specialty.toLowerCase()
+    );
+    
+    if (matchingDoctors.length === 0) {
+      return `I couldn't find any ${specialty} in our database. Would you like to search for another specialty?`;
+    }
+    
+    let response = `I found ${matchingDoctors.length} ${specialty}(s) in Pune:\n\n`;
+    matchingDoctors.forEach(doctor => {
+      response += `- ${doctor.name}: ${doctor.address}\n  Rating: ${doctor.rating}/5 (${doctor.reviews} reviews)\n  ${doctor.available ? '✅ Available today' : '❌ Not available today'}\n\n`;
+    });
+    
+    response += 'You can view these doctors on the map. Would you like more information about any of them?';
+    return response;
+  };
+
   const generateResponse = (userInput: string): string => {
-    // Simple pattern matching for demo purposes
+    // Check for specialty requests first
+    for (const [specialty, keywords] of Object.entries(specialtiesMapping)) {
+      for (const keyword of keywords) {
+        if (userInput.includes(keyword)) {
+          return findDoctorsBySpecialty(specialty.charAt(0).toUpperCase() + specialty.slice(1));
+        }
+      }
+      
+      // Direct specialty mentions
+      if (userInput.includes(specialty)) {
+        return findDoctorsBySpecialty(specialty.charAt(0).toUpperCase() + specialty.slice(1));
+      }
+    }
+    
+    // Check for direct doctor requests
+    if (userInput.includes('doctor') || userInput.includes('specialist') || userInput.includes('physicians')) {
+      // List all specialties available
+      const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)));
+      let response = 'Here are the medical specialties available in our database:\n\n';
+      specialties.forEach(specialty => {
+        response += `- ${specialty}\n`;
+      });
+      response += '\nYou can ask about any of these specialties, or ask for doctors near a specific location in Pune.';
+      return response;
+    }
+    
+    // Check for symptoms
     for (const [symptom, responses] of Object.entries(symptomsMapping)) {
       if (userInput.includes(symptom)) {
         return responses.join(' ');
       }
     }
     
+    // Basic conversation handling
     if (userInput.includes('hello') || userInput.includes('hi')) {
-      return 'Hello! How are you feeling today? Can you describe any symptoms you\'re experiencing?';
+      return 'Hello! How are you feeling today? Can you describe any symptoms you\'re experiencing or what type of doctor you\'re looking for?';
     } else if (userInput.includes('thank')) {
       return 'You\'re welcome! Is there anything else I can help you with?';
-    } else if (userInput.includes('doctor') || userInput.includes('appointment')) {
-      return 'I can help you find doctors in Pune. Could you specify what type of specialist you\'re looking for?';
+    } else if (userInput.includes('appointment')) {
+      return 'To book an appointment, please select a doctor from the list or map and click the "Book" button on their profile.';
     } else if (userInput.includes('emergency')) {
       return 'If this is a medical emergency, please call emergency services immediately or visit your nearest emergency room.';
+    } else if (userInput.includes('pune') || userInput.includes('location')) {
+      return 'Our service currently covers doctors in Pune, India. You can view their locations on the map and filter them by specialty.';
     } else {
-      return 'To provide you with better assistance, could you share more details about your symptoms or what specific medical information you\'re looking for?';
+      // Default fallback response
+      return 'I can help you find doctors by specialty or help with health questions. Try asking about a specific specialist (like "cardiologist"), a symptom (like "headache"), or say "show me all doctors".';
     }
   };
 
@@ -143,7 +203,7 @@ const ChatBot: React.FC = () => {
                   </Avatar>
                 )}
                 <div>
-                  <p className="text-sm">{message.content}</p>
+                  <p className="text-sm whitespace-pre-line">{message.content}</p>
                 </div>
                 {message.role === 'user' && (
                   <Avatar className="h-6 w-6 ml-2 bg-white/20">
