@@ -5,6 +5,7 @@ import { Doctor } from '../types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, AlertCircle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface GoogleMapProps {
   doctors: Doctor[];
@@ -31,6 +32,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({ doctors, selectedDoctor, onSelect
       version: "weekly",
       libraries: ["places"]
     });
+
+    let timeoutId: number;
 
     loader
       .load()
@@ -77,7 +80,18 @@ const GoogleMap: React.FC<GoogleMapProps> = ({ doctors, selectedDoctor, onSelect
         setMapError(true);
       });
       
+    // Set a timeout to check if the map failed to load due to invalid key
+    timeoutId = window.setTimeout(() => {
+      if (!map && !mapError) {
+        console.warn("Map failed to load within timeout period, likely due to invalid API key");
+        setMapError(true);
+      }
+    }, 5000);
+      
     return () => {
+      // Clean up timeout
+      window.clearTimeout(timeoutId);
+      
       // Clean up markers and info windows
       if (markers.length > 0) {
         markers.forEach(marker => marker.setMap(null));
@@ -172,17 +186,18 @@ const GoogleMap: React.FC<GoogleMapProps> = ({ doctors, selectedDoctor, onSelect
   if (mapError) {
     return (
       <div className="h-full relative bg-slate-50 flex flex-col items-center justify-center p-6">
-        <div className="text-center max-w-md">
-          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">Map Unavailable</h3>
-          <p className="text-gray-600 mb-6">
-            The map couldn't be loaded due to a missing or invalid API key. 
-            In a real application, you would need to provide a valid Google Maps API key.
-          </p>
+        <div className="text-center max-w-md mx-auto">
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Google Maps Unavailable</AlertTitle>
+            <AlertDescription>
+              The map couldn't be loaded due to an invalid API key or connectivity issues.
+            </AlertDescription>
+          </Alert>
           
-          <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
             <h4 className="font-medium text-lg mb-3">Doctor Locations</h4>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {doctors.map((doctor) => (
                 <div 
                   key={doctor.id}
@@ -194,9 +209,18 @@ const GoogleMap: React.FC<GoogleMapProps> = ({ doctors, selectedDoctor, onSelect
                   <div className="flex items-start">
                     <MapPin className="h-5 w-5 text-medical mr-2 mt-1 flex-shrink-0" />
                     <div>
-                      <h5 className="font-medium">{doctor.name}</h5>
+                      <div className="flex items-center">
+                        <h5 className="font-medium">{doctor.name}</h5>
+                        {doctor.available && (
+                          <span className="ml-2 text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">Available</span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600">{doctor.specialty}</p>
                       <p className="text-xs text-gray-500 mt-1">{doctor.address}</p>
+                      <p className="text-xs flex items-center mt-1">
+                        <Star className="h-3 w-3 text-yellow-500 mr-1" fill="currentColor" />
+                        <span>{doctor.rating} ({doctor.reviews} reviews)</span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -204,14 +228,39 @@ const GoogleMap: React.FC<GoogleMapProps> = ({ doctors, selectedDoctor, onSelect
             </div>
           </div>
           
+          <p className="text-sm text-muted-foreground mb-4">
+            For a real application, you would need to provide a valid Google Maps API key.
+          </p>
+          
           <Button 
             variant="outline" 
             className="text-sm"
-            onClick={() => window.location.reload()}
+            onClick={() => setMapError(false)}
           >
             Try Again
           </Button>
         </div>
+        
+        {/* Overlay information card for selected doctor */}
+        {selectedDoctor && (
+          <Card className="absolute bottom-4 left-4 right-4 md:left-auto md:right-auto md:w-64 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center mb-2">
+                <img 
+                  src={selectedDoctor.image} 
+                  alt={selectedDoctor.name} 
+                  className="h-10 w-10 rounded-full mr-3 object-cover" 
+                />
+                <div>
+                  <h3 className="font-semibold text-sm">{selectedDoctor.name}</h3>
+                  <p className="text-xs text-muted-foreground">{selectedDoctor.specialty}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">{selectedDoctor.address}</p>
+              <p className="text-xs">{selectedDoctor.description}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
