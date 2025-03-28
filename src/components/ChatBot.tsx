@@ -30,7 +30,7 @@ const ChatBot: React.FC = () => {
     ],
     fever: [
       'Fever could indicate an infection or inflammation.',
-      'If it's accompanied by other symptoms, consider seeing a General Physician.',
+      'If it is accompanied by other symptoms, consider seeing a General Physician.',
       'Make sure to stay hydrated and rest.'
     ],
     cough: [
