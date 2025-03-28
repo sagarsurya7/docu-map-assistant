@@ -13,6 +13,10 @@ import { Button } from '@/components/ui/button';
 import { CopilotKit } from '@copilotkit/react-core';
 import { toast } from '@/components/ui/use-toast';
 
+// For demo purposes we're using a demo API key
+// In production, you should use an environment variable
+const COPILOT_API_KEY = "demo-public-key";
+
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [allDoctors, setAllDoctors] = useState<Doctor[]>([]);
@@ -51,7 +55,7 @@ const Index = () => {
   // Render mobile view
   if (isMobile) {
     return (
-      <CopilotKit projectId="ai-doctor-nearby">
+      <CopilotKit publicApiKey={COPILOT_API_KEY}>
         <div className="flex flex-col h-screen">
           <Header isMobile={isMobile} toggleMobileMenu={() => setMobileView('list')} />
           
@@ -147,7 +151,7 @@ const Index = () => {
   
   // Render desktop view
   return (
-    <CopilotKit projectId="ai-doctor-nearby">
+    <CopilotKit publicApiKey={COPILOT_API_KEY}>
       <div className="flex flex-col h-screen">
         <Header isMobile={false} toggleMobileMenu={() => {}} />
         
