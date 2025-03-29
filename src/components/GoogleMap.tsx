@@ -14,6 +14,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   selectedDoctor, 
   onSelectDoctor 
 }) => {
+  // Note: Despite the component name still being GoogleMap for backward compatibility,
+  // we're actually using Radar for geolocation services inside the wrapper
   return (
     <GoogleMapWrapper
       doctors={doctors}

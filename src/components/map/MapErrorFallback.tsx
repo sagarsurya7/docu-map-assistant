@@ -25,9 +25,9 @@ const MapErrorFallback: React.FC<MapErrorFallbackProps> = ({
       <div className="text-center max-w-md mx-auto">
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Google Maps Unavailable</AlertTitle>
+          <AlertTitle>Map Service Unavailable</AlertTitle>
           <AlertDescription>
-            The map couldn't be loaded due to an invalid API key or connectivity issues.
+            The map couldn't be loaded due to connectivity issues or missing Radar API key.
           </AlertDescription>
         </Alert>
         
@@ -38,7 +38,7 @@ const MapErrorFallback: React.FC<MapErrorFallbackProps> = ({
         />
         
         <p className="text-sm text-muted-foreground mb-4">
-          For a real application, you would need to provide a valid Google Maps API key.
+          For a real application, you would need to provide a valid Radar API key.
         </p>
         
         <Button 
