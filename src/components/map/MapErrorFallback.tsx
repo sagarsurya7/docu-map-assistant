@@ -25,9 +25,9 @@ const MapErrorFallback: React.FC<MapErrorFallbackProps> = ({
       <div className="text-center max-w-md mx-auto">
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Map Service Unavailable</AlertTitle>
+          <AlertTitle>Radar Map Unavailable</AlertTitle>
           <AlertDescription>
-            The map couldn't be loaded due to connectivity issues or missing Radar API key.
+            The location map couldn't be loaded due to connectivity issues or missing Radar API key.
           </AlertDescription>
         </Alert>
         

@@ -25,12 +25,12 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
   
   // Initialize the map
   useEffect(() => {
-    const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
+    const RADAR_API_KEY = "YOUR_RADAR_API_KEY";
     
-    console.log("In a real application, you would replace 'YOUR_GOOGLE_MAPS_API_KEY' with an actual Google Maps API key.");
+    console.log("In a real application, you would replace 'YOUR_RADAR_API_KEY' with an actual Radar API key.");
     
     const loader = new Loader({
-      apiKey: GOOGLE_MAPS_API_KEY,
+      apiKey: RADAR_API_KEY,
       version: "weekly",
       libraries: ["places"]
     });
