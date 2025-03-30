@@ -1,7 +1,8 @@
 
 import { useRef, useState, useCallback } from 'react';
-import { initializeMapbox } from '@/utils/mapLoader';
-import { isElementInDOM, safelyRemoveMap } from './utils';
+import { useMapboxLoading } from './useMapboxLoading';
+import { useMapInstance } from './useMapInstance';
+import { useMapError } from './useMapError';
 
 export const useMapInitialization = (
   mapRef: React.RefObject<HTMLDivElement>,
@@ -10,10 +11,17 @@ export const useMapInitialization = (
   onMapError?: (error: Error) => void
 ) => {
   const [isMapInitialized, setIsMapInitialized] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
   const mapInitialized = useRef(false);
   const mountedRef = useRef(true);
-  const initPromiseRef = useRef<Promise<any> | null>(null);
+  
+  // Use the map loading hook
+  const { loadMapboxWithTimeout } = useMapboxLoading();
+  
+  // Use the map instance creation hook
+  const { createMapInstance } = useMapInstance(map);
+  
+  // Use the map error handling hook
+  const { mapError, setMapError, handleMapError } = useMapError(onMapError);
   
   // Function to initialize the map
   const initMap = useCallback(async () => {
@@ -22,161 +30,47 @@ export const useMapInitialization = (
     try {
       console.log("Starting map initialization");
       
-      // Don't initialize again if there's already a pending initialization
-      if (initPromiseRef.current) {
-        return initPromiseRef.current;
+      // Load Mapbox library first
+      await loadMapboxWithTimeout(mountedRef);
+      
+      if (!mountedRef.current) return;
+      
+      // Create map instance
+      const mapInstance = await createMapInstance(window.mapboxgl, mapRef, mountedRef);
+      
+      if (!mountedRef.current) return;
+      
+      // Update state
+      setIsMapInitialized(true);
+      setMapError(null);
+      mapInitialized.current = true;
+      
+      // Notify parent component
+      if (onMapInitialized) {
+        onMapInitialized(mapInstance);
       }
       
-      // Create a new initialization promise
-      initPromiseRef.current = new Promise(async (resolve, reject) => {
-        try {
-          await initializeMapbox();
-          
-          // Wait for Mapbox to load with a timeout
-          let attempts = 0;
-          const maxAttempts = 20;
-          
-          const checkMapboxLoaded = () => {
-            attempts++;
-            
-            if (!mountedRef.current) {
-              console.log("Component unmounted during initialization");
-              initPromiseRef.current = null;
-              return reject("Component unmounted");
-            }
-            
-            if (window.mapboxgl) {
-              console.log("Mapbox object available, creating map");
-              
-              // Center on Pune, India
-              const puneCoordinates = { lng: 73.8567, lat: 18.5204 };
-              
-              try {
-                // Clean up previous map instance if it exists
-                if (map) {
-                  safelyRemoveMap(map);
-                }
-                
-                // Check if mapRef is still valid before creating map
-                if (!mapRef.current || !isElementInDOM(mapRef.current)) {
-                  console.log("Map container is no longer in DOM");
-                  initPromiseRef.current = null;
-                  return reject("Map container is not in the DOM");
-                }
-                
-                // Create map instance
-                const mapInstance = new window.mapboxgl.Map({
-                  container: mapRef.current,
-                  style: 'mapbox://styles/mapbox/light-v11',
-                  center: puneCoordinates,
-                  zoom: 12,
-                  failIfMajorPerformanceCaveat: true
-                });
-                
-                // Set up load handler
-                mapInstance.once('load', () => {
-                  if (!mountedRef.current) {
-                    safelyRemoveMap(mapInstance);
-                    initPromiseRef.current = null;
-                    return reject("Component unmounted during map load");
-                  }
-                  
-                  console.log("Map loaded");
-                  
-                  // Add navigation controls only after map is loaded
-                  try {
-                    mapInstance.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
-                  } catch (error) {
-                    console.log("Error adding navigation control:", error);
-                  }
-                  
-                  setIsMapInitialized(true);
-                  setMapError(null);
-                  mapInitialized.current = true;
-                  
-                  if (onMapInitialized) {
-                    onMapInitialized(mapInstance);
-                  }
-                  
-                  initPromiseRef.current = null;
-                  resolve(mapInstance);
-                });
-                
-                // Handle map errors
-                mapInstance.on('error', (e: any) => {
-                  if (!mountedRef.current) return;
-                  console.error("Mapbox error:", e);
-                  setMapError(`Map error: ${e.error?.message || 'Unknown error'}`);
-                  
-                  if (onMapError) {
-                    onMapError(new Error(e.error?.message || 'Unknown map error'));
-                  }
-                  
-                  if (initPromiseRef.current) {
-                    initPromiseRef.current = null;
-                    reject(e);
-                  }
-                });
-                
-              } catch (mapError) {
-                console.error("Error creating map instance:", mapError);
-                if (mountedRef.current) {
-                  setMapError("Error creating map. Please check your Mapbox token.");
-                  
-                  if (onMapError) {
-                    onMapError(new Error("Error creating map. Please check your Mapbox token."));
-                  }
-                }
-                initPromiseRef.current = null;
-                reject(mapError);
-              }
-            } else if (attempts >= maxAttempts) {
-              console.error("Mapbox failed to load after timeout");
-              if (mountedRef.current) {
-                setMapError("Failed to load map. Please check your connection and try again.");
-                
-                if (onMapError) {
-                  onMapError(new Error("Failed to load map. Please check your connection and try again."));
-                }
-              }
-              initPromiseRef.current = null;
-              reject("Mapbox failed to load after timeout");
-            } else {
-              // Not loaded yet, check again after a delay
-              setTimeout(checkMapboxLoaded, 500);
-            }
-          };
-          
-          // Start checking if Mapbox is loaded
-          checkMapboxLoaded();
-        } catch (error) {
-          console.error("Error in map initialization promise:", error);
-          setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
-          
-          if (onMapError) {
-            onMapError(new Error("Failed to initialize the map. Please ensure your Mapbox token is valid."));
-          }
-          
-          initPromiseRef.current = null;
-          reject(error);
-        }
-      });
-      
-      return initPromiseRef.current;
-      
+      return mapInstance;
     } catch (error) {
-      console.error("Error in map initialization:", error);
-      if (mountedRef.current) {
-        setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
-        
-        if (onMapError) {
-          onMapError(new Error("Failed to initialize the map. Please ensure your Mapbox token is valid."));
-        }
-      }
-      initPromiseRef.current = null;
+      if (!mountedRef.current) return;
+      
+      console.error("Map initialization failed:", error);
+      
+      const errorMessage = typeof error === 'string' 
+        ? error 
+        : "Failed to initialize the map. Please ensure your Mapbox token is valid.";
+      
+      handleMapError(errorMessage);
       throw error;
     }
-  }, [map, onMapInitialized, onMapError, mapRef]);
+  }, [
+    mapRef, 
+    onMapInitialized, 
+    loadMapboxWithTimeout, 
+    createMapInstance, 
+    setMapError, 
+    handleMapError
+  ]);
 
   // Function to reinitialize the map (useful when token changes)
   const reinitializeMap = useCallback(() => {
@@ -186,9 +80,6 @@ export const useMapInitialization = (
     setMapError(null);
     mapInitialized.current = false;
     
-    // Reset initialization promise
-    initPromiseRef.current = null;
-    
     // Initialize new map after a short delay
     const timer = setTimeout(() => {
       if (mountedRef.current) {
@@ -197,7 +88,7 @@ export const useMapInitialization = (
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [initMap]);
+  }, [initMap, setMapError]);
   
   return {
     isMapInitialized,
