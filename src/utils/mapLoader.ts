@@ -1,27 +1,15 @@
 
-// Default to empty token, will be replaced by user input
-let MAPBOX_ACCESS_TOKEN = ""; 
-
-// Get token from localStorage if it exists
-try {
-  const storedToken = localStorage.getItem('mapbox-token');
-  if (storedToken) {
-    MAPBOX_ACCESS_TOKEN = storedToken;
-    console.log("Loaded Mapbox token from localStorage:", storedToken.substring(0, 10) + "...");
-  }
-} catch (e) {
-  console.error("Error accessing localStorage:", e);
-}
+// Use a constant Mapbox token instead of requiring user input
+const MAPBOX_ACCESS_TOKEN = "pk.eyJ1Ijoic3VyeXNhZ2FyIiwiYSI6ImNtOHZvdXU4ZTBzcXYybHMzc3RtZTFmcWoifQ.p5UWQ9bTQS2wyls1ccuU9g";
 
 export const setMapboxToken = (token: string) => {
   try {
-    MAPBOX_ACCESS_TOKEN = token;
-    localStorage.setItem('mapbox-token', token);
-    console.log("Set Mapbox token:", token.substring(0, 10) + "...");
+    // For debugging
+    console.log("Token update request received, but using constant token");
     
     // Update token for any existing mapboxgl instance
     if (window.mapboxgl) {
-      window.mapboxgl.accessToken = token;
+      window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
       console.log("Updated token for existing mapboxgl instance");
     }
   } catch (e) {
@@ -58,16 +46,10 @@ export const initializeMapbox = () => {
       // If Mapbox is already loaded
       if (window.mapboxgl) {
         console.log("Mapbox already loaded, setting token");
-        if (MAPBOX_ACCESS_TOKEN) {
-          window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-          console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
-          isLoadingMapbox = false;
-          resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
-        } else {
-          console.warn("No Mapbox access token provided");
-          isLoadingMapbox = false;
-          reject(new Error("No Mapbox access token provided"));
-        }
+        window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+        console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
+        isLoadingMapbox = false;
+        resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
         return;
       }
       
@@ -113,17 +95,10 @@ export const initializeMapbox = () => {
           setTimeout(() => {
             if (window.mapboxgl) {
               console.log("Mapbox GL JS loaded successfully");
-              if (MAPBOX_ACCESS_TOKEN) {
-                window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-                console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
-                isLoadingMapbox = false;
-                resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
-              } else {
-                const err = new Error("No Mapbox access token provided");
-                console.warn(err);
-                isLoadingMapbox = false;
-                reject(err);
-              }
+              window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+              console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
+              isLoadingMapbox = false;
+              resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
             } else {
               const err = new Error("Mapbox object not available after script load");
               console.error(err);
@@ -156,17 +131,10 @@ export const initializeMapbox = () => {
           
           if (window.mapboxgl) {
             clearInterval(checkMapboxInterval);
-            if (MAPBOX_ACCESS_TOKEN) {
-              window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-              console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
-              isLoadingMapbox = false;
-              resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
-            } else {
-              const err = new Error("No Mapbox access token provided");
-              console.warn(err);
-              isLoadingMapbox = false;
-              reject(err);
-            }
+            window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+            console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
+            isLoadingMapbox = false;
+            resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
           } else if (checkAttempts >= maxCheckAttempts) {
             clearInterval(checkMapboxInterval);
             const err = new Error("Mapbox GL JS not available after timeout");

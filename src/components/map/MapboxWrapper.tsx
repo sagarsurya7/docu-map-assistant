@@ -5,8 +5,6 @@ import DoctorInfoCard from './DoctorInfoCard';
 import MapError from './MapError';
 import MapStyles from './MapStyles';
 import { useMapbox } from '@/hooks/mapbox/useMapbox';
-import MapTokenInput from './MapTokenInput';
-import { setMapboxToken, getMapboxToken } from '@/utils/mapLoader';
 import { toast } from '@/components/ui/use-toast';
 
 interface MapboxWrapperProps {
@@ -21,7 +19,6 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   onSelectDoctor 
 }) => {
   const isMounted = useRef(true);
-  const [tokenProvided, setTokenProvided] = useState(!!getMapboxToken());
   const [isLoading, setIsLoading] = useState(true);
   const updateMarkersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -57,30 +54,6 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       }
     }
   });
-  
-  // Handle token submission
-  const handleTokenSubmit = (token: string) => {
-    if (!token || token.trim().length < 20) {
-      toast({
-        title: "Invalid Token",
-        description: "Please enter a valid Mapbox token",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setMapboxToken(token);
-    setTokenProvided(true);
-    setIsLoading(true);
-    
-    // Short delay before reinitializing
-    setTimeout(() => {
-      if (isMounted.current) {
-        console.log("Reinitializing map with new token:", token.substring(0, 10) + "...");
-        reinitializeMap();
-      }
-    }, 300);
-  };
   
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
@@ -137,11 +110,6 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     };
   }, []);
 
-  // If no token is provided, show the token input
-  if (!tokenProvided) {
-    return <MapTokenInput onSubmit={handleTokenSubmit} />;
-  }
-
   return (
     <div className="h-full relative">
       <MapStyles />
@@ -152,11 +120,6 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
             if (isMounted.current) {
               setIsLoading(true);
               reinitializeMap();
-            }
-          }}
-          onChangeToken={() => {
-            if (isMounted.current) {
-              setTokenProvided(false);
             }
           }}
         />

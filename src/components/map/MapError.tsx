@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 interface MapErrorProps {
   message: string;
   onRetry?: () => void;
-  onChangeToken?: () => void;
 }
 
-const MapError: React.FC<MapErrorProps> = ({ message, onRetry, onChangeToken }) => {
+const MapError: React.FC<MapErrorProps> = ({ message, onRetry }) => {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
       <div className="text-center p-4 max-w-md">
@@ -20,16 +19,6 @@ const MapError: React.FC<MapErrorProps> = ({ message, onRetry, onChangeToken }) 
               className="px-4 py-2 bg-medical text-white rounded-md hover:bg-medical-dark"
             >
               Retry
-            </Button>
-          )}
-          
-          {onChangeToken && (
-            <Button 
-              variant="outline"
-              onClick={onChangeToken} 
-              className="px-4 py-2 rounded-md"
-            >
-              Change Mapbox Token
             </Button>
           )}
           
