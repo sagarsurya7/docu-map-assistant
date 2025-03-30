@@ -1,5 +1,5 @@
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { initializeMapbox } from '@/utils/mapLoader';
 import { Doctor } from '@/types';
 
@@ -15,70 +15,103 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
   const [markers, setMarkers] = useState<any[]>([]);
   const [popups, setPopups] = useState<any[]>([]);
   
-  useEffect(() => {
+  // Function to initialize the map
+  const initMap = useCallback(async () => {
     if (!mapRef.current) return;
     
-    const initMap = async () => {
-      try {
-        console.log("Starting map initialization");
-        await initializeMapbox();
+    try {
+      console.log("Starting map initialization");
+      await initializeMapbox();
+      
+      // Wait for Mapbox to load with a timeout
+      let attempts = 0;
+      const maxAttempts = 20;
+      
+      const initInterval = setInterval(() => {
+        attempts++;
         
-        // Wait for Mapbox to load with a timeout
-        let attempts = 0;
-        const maxAttempts = 20;
-        
-        const initInterval = setInterval(() => {
-          attempts++;
+        if (window.mapboxgl) {
+          clearInterval(initInterval);
           
-          if (window.mapboxgl) {
-            clearInterval(initInterval);
-            
-            console.log("Mapbox object available, creating map");
-            
-            // Center on Pune, India
-            const puneCoordinates = { lng: 73.8567, lat: 18.5204 };
-            
-            try {
-              const mapInstance = new window.mapboxgl.Map({
-                container: mapRef.current,
-                style: 'mapbox://styles/mapbox/light-v11',
-                center: puneCoordinates,
-                zoom: 12
-              });
-              
-              // Add navigation controls
-              mapInstance.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
-              
-              console.log("Map instance created");
-              
-              mapInstance.on('load', () => {
-                console.log("Map loaded");
-                setMap(mapInstance);
-                setIsMapInitialized(true);
-                setMapError(null);
-                
-                if (onMapInitialized) {
-                  onMapInitialized(mapInstance);
-                }
-              });
-              
-            } catch (mapError) {
-              console.error("Error creating map instance:", mapError);
-              setMapError("Error creating map. Please refresh the page.");
+          console.log("Mapbox object available, creating map");
+          
+          // Center on Pune, India
+          const puneCoordinates = { lng: 73.8567, lat: 18.5204 };
+          
+          try {
+            // Clean up previous map instance if it exists
+            if (map) {
+              map.remove();
             }
-          } else if (attempts >= maxAttempts) {
-            clearInterval(initInterval);
-            console.error("Mapbox failed to load after timeout");
-            setMapError("Failed to load map. Please refresh and try again.");
+            
+            const mapInstance = new window.mapboxgl.Map({
+              container: mapRef.current,
+              style: 'mapbox://styles/mapbox/light-v11',
+              center: puneCoordinates,
+              zoom: 12
+            });
+            
+            // Add navigation controls
+            mapInstance.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
+            
+            console.log("Map instance created");
+            
+            mapInstance.on('load', () => {
+              console.log("Map loaded");
+              setMap(mapInstance);
+              setIsMapInitialized(true);
+              setMapError(null);
+              
+              if (onMapInitialized) {
+                onMapInitialized(mapInstance);
+              }
+            });
+            
+          } catch (mapError) {
+            console.error("Error creating map instance:", mapError);
+            setMapError("Error creating map. Please check your Mapbox token.");
           }
-        }, 500);
-        
-      } catch (error) {
-        console.error("Error in map initialization:", error);
-        setMapError("Failed to initialize the map. Please try refreshing the page.");
-      }
-    };
+        } else if (attempts >= maxAttempts) {
+          clearInterval(initInterval);
+          console.error("Mapbox failed to load after timeout");
+          setMapError("Failed to load map. Please check your connection and try again.");
+        }
+      }, 500);
+      
+    } catch (error) {
+      console.error("Error in map initialization:", error);
+      setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
+    }
+  }, [map, onMapInitialized]);
+  
+  // Function to reinitialize the map (useful when token changes)
+  const reinitializeMap = useCallback(() => {
+    setIsMapInitialized(false);
+    setMapError(null);
     
+    // Clean up existing markers and popups
+    markers.forEach(marker => {
+      if (marker) marker.remove();
+    });
+    setMarkers([]);
+    
+    popups.forEach(popup => {
+      if (popup) popup.remove();
+    });
+    setPopups([]);
+    
+    // Remove existing map
+    if (map) {
+      map.remove();
+      setMap(null);
+    }
+    
+    // Initialize new map
+    initMap();
+  }, [initMap, map, markers, popups]);
+  
+  // Initialize map on component mount
+  useEffect(() => {
     initMap();
     
     // Cleanup function
@@ -96,10 +129,10 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
         if (popup) popup.remove();
       });
     };
-  }, [onMapInitialized]);
+  }, [initMap]);
 
   // Function to update markers
-  const updateMarkers = (doctors: Doctor[], selectedDoctor: Doctor | null) => {
+  const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
     if (!map || !isMapInitialized || !window.mapboxgl) return;
     
     // Clear existing markers and popups
@@ -163,7 +196,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     
     setMarkers(newMarkers);
     setPopups(newPopups);
-  };
+  }, [map, isMapInitialized, markers, popups]);
 
   return { 
     mapRef, 
@@ -171,7 +204,8 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     isMapInitialized, 
     mapError, 
     setMapError,
-    updateMarkers
+    updateMarkers,
+    reinitializeMap
   };
 };
 

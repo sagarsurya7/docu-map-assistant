@@ -1,6 +1,24 @@
 
-// Use Mapbox instead of Radar Maps
-const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoibG92YWJsZS1kZXYiLCJhIjoiY2xzdzU0ZWRnMWRwYjJpcXc1cHI3MDB5MyJ9.tEFciJFY34Ah5QZBJqtlhg"; 
+// Default to empty token, will be replaced by user input
+let MAPBOX_ACCESS_TOKEN = ""; 
+
+// Get token from localStorage if it exists
+const storedToken = localStorage.getItem('mapbox-token');
+if (storedToken) {
+  MAPBOX_ACCESS_TOKEN = storedToken;
+}
+
+export const setMapboxToken = (token: string) => {
+  MAPBOX_ACCESS_TOKEN = token;
+  localStorage.setItem('mapbox-token', token);
+  
+  // Update token for any existing mapboxgl instance
+  if (window.mapboxgl) {
+    window.mapboxgl.accessToken = token;
+  }
+};
+
+export const getMapboxToken = () => MAPBOX_ACCESS_TOKEN;
 
 export const initializeMapbox = () => {
   return new Promise((resolve, reject) => {
@@ -27,8 +45,13 @@ export const initializeMapbox = () => {
         mapboxScript.onload = () => {
           if (window.mapboxgl) {
             console.log("Mapbox GL JS loaded successfully");
-            window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-            resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
+            if (MAPBOX_ACCESS_TOKEN) {
+              window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+              resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
+            } else {
+              console.warn("No Mapbox access token provided");
+              reject("No Mapbox access token provided");
+            }
           } else {
             console.error("Mapbox object not available after script load");
             reject("Failed to load Mapbox GL JS");
@@ -42,9 +65,16 @@ export const initializeMapbox = () => {
       } else {
         // Script already loaded
         if (window.mapboxgl) {
-          window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+          if (MAPBOX_ACCESS_TOKEN) {
+            window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+            resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
+          } else {
+            console.warn("No Mapbox access token provided");
+            reject("No Mapbox access token provided");
+          }
+        } else {
+          reject("Mapbox GL JS not available");
         }
-        resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
       }
     } catch (error) {
       console.error("Error in initializeMapbox:", error);

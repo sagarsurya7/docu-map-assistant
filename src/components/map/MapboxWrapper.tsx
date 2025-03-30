@@ -1,10 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Doctor } from '@/types';
 import DoctorInfoCard from './DoctorInfoCard';
 import MapError from './MapError';
 import MapStyles from './MapStyles';
 import { useMapbox } from '@/hooks/useMapbox';
+import MapTokenInput from './MapTokenInput';
+import { setMapboxToken, getMapboxToken } from '@/utils/mapLoader';
 
 interface MapboxWrapperProps {
   doctors: Doctor[];
@@ -17,8 +19,17 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   selectedDoctor, 
   onSelectDoctor 
 }) => {
+  const [tokenProvided, setTokenProvided] = useState(!!getMapboxToken());
+  
   // Initialize Mapbox
-  const { mapRef, isMapInitialized, mapError, updateMarkers } = useMapbox();
+  const { mapRef, isMapInitialized, mapError, updateMarkers, reinitializeMap } = useMapbox();
+  
+  // Handle token submission
+  const handleTokenSubmit = (token: string) => {
+    setMapboxToken(token);
+    setTokenProvided(true);
+    reinitializeMap();
+  };
   
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
@@ -27,11 +38,20 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     }
   }, [isMapInitialized, doctors, selectedDoctor, updateMarkers]);
 
+  // If no token is provided, show the token input
+  if (!tokenProvided) {
+    return <MapTokenInput onSubmit={handleTokenSubmit} />;
+  }
+
   return (
     <div className="h-full relative">
       <MapStyles />
       {mapError ? (
-        <MapError message={mapError} />
+        <MapError 
+          message={mapError} 
+          onRetry={reinitializeMap}
+          onChangeToken={() => setTokenProvided(false)}
+        />
       ) : (
         <div ref={mapRef} className="h-full w-full mapbox-container"></div>
       )}
