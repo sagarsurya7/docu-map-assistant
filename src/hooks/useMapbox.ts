@@ -14,10 +14,11 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
   const [mapError, setMapError] = useState<string | null>(null);
   const [markers, setMarkers] = useState<any[]>([]);
   const [popups, setPopups] = useState<any[]>([]);
+  const mapInitialized = useRef(false);
   
   // Function to initialize the map
   const initMap = useCallback(async () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || mapInitialized.current) return;
     
     try {
       console.log("Starting map initialization");
@@ -44,28 +45,35 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
               map.remove();
             }
             
-            const mapInstance = new window.mapboxgl.Map({
-              container: mapRef.current,
-              style: 'mapbox://styles/mapbox/light-v11',
-              center: puneCoordinates,
-              zoom: 12
-            });
-            
-            // Add navigation controls
-            mapInstance.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
-            
-            console.log("Map instance created");
-            
-            mapInstance.on('load', () => {
-              console.log("Map loaded");
-              setMap(mapInstance);
-              setIsMapInitialized(true);
-              setMapError(null);
+            // Ensure the container is still in the DOM before creating the map
+            if (mapRef.current && document.body.contains(mapRef.current)) {
+              const mapInstance = new window.mapboxgl.Map({
+                container: mapRef.current,
+                style: 'mapbox://styles/mapbox/light-v11',
+                center: puneCoordinates,
+                zoom: 12
+              });
               
-              if (onMapInitialized) {
-                onMapInitialized(mapInstance);
-              }
-            });
+              // Add navigation controls
+              mapInstance.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
+              
+              console.log("Map instance created");
+              
+              mapInstance.on('load', () => {
+                console.log("Map loaded");
+                setMap(mapInstance);
+                setIsMapInitialized(true);
+                setMapError(null);
+                mapInitialized.current = true;
+                
+                if (onMapInitialized) {
+                  onMapInitialized(mapInstance);
+                }
+              });
+            } else {
+              console.error("Map container is not in the DOM");
+              setMapError("Map container is not in the DOM");
+            }
             
           } catch (mapError) {
             console.error("Error creating map instance:", mapError);
@@ -88,6 +96,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
   const reinitializeMap = useCallback(() => {
     setIsMapInitialized(false);
     setMapError(null);
+    mapInitialized.current = false;
     
     // Clean up existing markers and popups
     markers.forEach(marker => {
@@ -102,7 +111,11 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     
     // Remove existing map
     if (map) {
-      map.remove();
+      try {
+        map.remove();
+      } catch (error) {
+        console.error("Error removing map:", error);
+      }
       setMap(null);
     }
     
@@ -117,80 +130,112 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     // Cleanup function
     return () => {
       if (map) {
-        map.remove();
+        try {
+          // Clean up markers and popups first
+          markers.forEach(marker => {
+            if (marker) marker.remove();
+          });
+          
+          popups.forEach(popup => {
+            if (popup) popup.remove();
+          });
+          
+          // Then remove the map
+          map.remove();
+        } catch (error) {
+          console.error("Error during map cleanup:", error);
+        }
       }
-      
-      // Clean up markers and popups
-      markers.forEach(marker => {
-        if (marker) marker.remove();
-      });
-      
-      popups.forEach(popup => {
-        if (popup) popup.remove();
-      });
     };
   }, [initMap]);
 
   // Function to update markers
   const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
-    if (!map || !isMapInitialized || !window.mapboxgl) return;
+    if (!map || !isMapInitialized || !window.mapboxgl) {
+      console.log("Cannot update markers, map not ready");
+      return;
+    }
     
     // Clear existing markers and popups
-    markers.forEach(marker => marker.remove());
-    popups.forEach(popup => popup.remove());
+    markers.forEach(marker => {
+      try {
+        if (marker) marker.remove();
+      } catch (e) {
+        console.error("Error removing marker:", e);
+      }
+    });
+    
+    popups.forEach(popup => {
+      try {
+        if (popup) popup.remove();
+      } catch (e) {
+        console.error("Error removing popup:", e);
+      }
+    });
     
     const newMarkers: any[] = [];
     const newPopups: any[] = [];
     
     doctors.forEach(doctor => {
-      const isSelected = selectedDoctor?.id === doctor.id;
-      
-      // Create popup
-      const popup = new window.mapboxgl.Popup({ 
-        offset: 25,
-        closeButton: true,
-        closeOnClick: true
-      }).setHTML(`
-        <div class="p-2">
-          <div class="font-semibold">${doctor.name}</div>
-          <div class="text-sm">${doctor.specialty}</div>
-          <div class="text-xs mt-1">${doctor.address}</div>
-        </div>
-      `);
-      
-      // Save popup
-      newPopups.push(popup);
-      
-      // Create a DOM element for the marker
-      const el = document.createElement('div');
-      el.className = 'marker';
-      el.style.backgroundImage = `url(https://maps.google.com/mapfiles/ms/icons/${isSelected ? 'blue' : 'red'}-dot.png)`;
-      el.style.width = '32px';
-      el.style.height = '32px';
-      el.style.backgroundSize = 'cover';
-      
-      if (isSelected) {
-        el.className = 'marker selected-marker';
-      }
-      
-      // Create the marker
-      const marker = new window.mapboxgl.Marker(el)
-        .setLngLat([doctor.location.lng, doctor.location.lat])
-        .setPopup(popup)
-        .addTo(map);
-      
-      newMarkers.push(marker);
-      
-      // Show popup for selected doctor
-      if (isSelected) {
-        popup.addTo(map);
+      try {
+        const isSelected = selectedDoctor?.id === doctor.id;
         
-        // Center map on selected doctor
-        map.flyTo({
-          center: [doctor.location.lng, doctor.location.lat],
-          zoom: 15,
-          essential: true
-        });
+        // Create popup
+        const popup = new window.mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: true
+        }).setHTML(`
+          <div class="p-2">
+            <div class="font-semibold">${doctor.name}</div>
+            <div class="text-sm">${doctor.specialty}</div>
+            <div class="text-xs mt-1">${doctor.address}</div>
+          </div>
+        `);
+        
+        // Save popup
+        newPopups.push(popup);
+        
+        // Create a DOM element for the marker
+        const el = document.createElement('div');
+        el.className = 'marker';
+        el.style.backgroundImage = `url(https://maps.google.com/mapfiles/ms/icons/${isSelected ? 'blue' : 'red'}-dot.png)`;
+        el.style.width = '32px';
+        el.style.height = '32px';
+        el.style.backgroundSize = 'cover';
+        
+        if (isSelected) {
+          el.className = 'marker selected-marker';
+        }
+        
+        // Check if map is still valid
+        if (map && !map._removed) {
+          // Create the marker
+          const marker = new window.mapboxgl.Marker(el)
+            .setLngLat([doctor.location.lng, doctor.location.lat])
+            .setPopup(popup);
+            
+          // Only add to map if map is still valid
+          if (map.getContainer() && document.body.contains(map.getContainer())) {
+            marker.addTo(map);
+            newMarkers.push(marker);
+          }
+          
+          // Show popup for selected doctor
+          if (isSelected && map.getContainer() && document.body.contains(map.getContainer())) {
+            // Center map on selected doctor
+            map.flyTo({
+              center: [doctor.location.lng, doctor.location.lat],
+              zoom: 15,
+              essential: true
+            });
+            
+            // Add popup to map if the map exists
+            popup.addTo(map);
+          }
+        }
+      } catch (error) {
+        console.error("Error creating marker for doctor:", doctor.id, error);
       }
     });
     

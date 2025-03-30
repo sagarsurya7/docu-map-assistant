@@ -11,13 +11,17 @@ interface MapTokenInputProps {
 
 const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
   const [token, setToken] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (token.trim()) {
-      onSubmit(token.trim());
+      setIsSubmitting(true);
       // Store token in localStorage for future use
       localStorage.setItem('mapbox-token', token.trim());
+      onSubmit(token.trim());
+      // Reset submitting state after a delay
+      setTimeout(() => setIsSubmitting(false), 1000);
     }
   };
 
@@ -53,10 +57,16 @@ const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
           placeholder="pk.eyJ1joiZXhhbXBsZSIsImEiOiJjbGV4YW1..."
           className="w-full"
           required
+          disabled={isSubmitting}
         />
         
-        <Button type="submit" className="w-full">
-          Apply Token
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isSubmitting || !token.trim()}
+          aria-busy={isSubmitting}
+        >
+          {isSubmitting ? "Applying..." : "Apply Token"}
         </Button>
       </form>
     </div>

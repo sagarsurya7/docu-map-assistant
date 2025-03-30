@@ -28,13 +28,21 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   const handleTokenSubmit = (token: string) => {
     setMapboxToken(token);
     setTokenProvided(true);
-    reinitializeMap();
+    // Short delay to ensure DOM is ready
+    setTimeout(() => {
+      reinitializeMap();
+    }, 100);
   };
   
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
     if (isMapInitialized && doctors.length > 0) {
-      updateMarkers(doctors, selectedDoctor);
+      // Add small delay to ensure the map is fully ready
+      const timer = setTimeout(() => {
+        updateMarkers(doctors, selectedDoctor);
+      }, 200);
+      
+      return () => clearTimeout(timer);
     }
   }, [isMapInitialized, doctors, selectedDoctor, updateMarkers]);
 
@@ -55,7 +63,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       ) : (
         <div ref={mapRef} className="h-full w-full mapbox-container"></div>
       )}
-      {selectedDoctor && !mapError && (
+      {selectedDoctor && !mapError && isMapInitialized && (
         <DoctorInfoCard 
           doctor={selectedDoctor} 
           className="absolute bottom-4 left-4 w-64 shadow-lg" 
