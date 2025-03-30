@@ -22,6 +22,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
 }) => {
   const mountRef = useRef(true);
   const [tokenProvided, setTokenProvided] = useState(!!getMapboxToken());
+  const [isLoading, setIsLoading] = useState(true);
   const updateMarkersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Initialize Mapbox with delayed callbacks
@@ -34,10 +35,17 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   } = useMapbox({
     onMapInitialized: () => {
       if (mountRef.current) {
+        setIsLoading(false);
         toast({
           title: "Map Initialized",
           description: "The map has been successfully loaded.",
         });
+      }
+    },
+    onMapError: (error) => {
+      if (mountRef.current) {
+        setIsLoading(false);
+        console.error("Map initialization error:", error);
       }
     }
   });
@@ -46,6 +54,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   const handleTokenSubmit = (token: string) => {
     setMapboxToken(token);
     setTokenProvided(true);
+    setIsLoading(true);
     
     // Delay reinitializing map to ensure DOM is ready
     const timer = setTimeout(() => {
@@ -69,7 +78,11 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       // Add delay to ensure the map is fully ready
       updateMarkersTimeoutRef.current = setTimeout(() => {
         if (mountRef.current) {
-          updateMarkers(doctors, selectedDoctor);
+          try {
+            updateMarkers(doctors, selectedDoctor);
+          } catch (error) {
+            console.error("Error updating markers:", error);
+          }
           updateMarkersTimeoutRef.current = null;
         }
       }, 500);
@@ -109,6 +122,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
           message={mapError} 
           onRetry={() => {
             if (mountRef.current) {
+              setIsLoading(true);
               reinitializeMap();
             }
           }}
@@ -119,9 +133,19 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
           }}
         />
       ) : (
-        <div ref={mapRef} className="h-full w-full mapbox-container"></div>
+        <>
+          <div ref={mapRef} className="h-full w-full mapbox-container"></div>
+          {isLoading && (
+            <div className="absolute inset-0 bg-slate-100 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical mb-4"></div>
+                <p className="text-medical-dark">Loading map...</p>
+              </div>
+            </div>
+          )}
+        </>
       )}
-      {selectedDoctor && !mapError && isMapInitialized && (
+      {selectedDoctor && !mapError && isMapInitialized && !isLoading && (
         <DoctorInfoCard 
           doctor={selectedDoctor} 
           className="absolute bottom-4 left-4 w-64 shadow-lg" 
