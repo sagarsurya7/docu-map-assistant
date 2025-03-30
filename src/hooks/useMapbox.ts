@@ -5,9 +5,10 @@ import { Doctor } from '@/types';
 
 interface UseMapboxProps {
   onMapInitialized?: (mapInstance: any) => void;
+  onMapError?: (error: Error) => void;
 }
 
-export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
+export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
@@ -191,6 +192,10 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
                   console.error("Mapbox error:", e);
                   setMapError(`Map error: ${e.error?.message || 'Unknown error'}`);
                   
+                  if (onMapError) {
+                    onMapError(new Error(e.error?.message || 'Unknown map error'));
+                  }
+                  
                   if (initPromiseRef.current) {
                     initPromiseRef.current = null;
                     reject(e);
@@ -201,6 +206,10 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
                 console.error("Error creating map instance:", mapError);
                 if (mountedRef.current) {
                   setMapError("Error creating map. Please check your Mapbox token.");
+                  
+                  if (onMapError) {
+                    onMapError(new Error("Error creating map. Please check your Mapbox token."));
+                  }
                 }
                 initPromiseRef.current = null;
                 reject(mapError);
@@ -209,6 +218,10 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
               console.error("Mapbox failed to load after timeout");
               if (mountedRef.current) {
                 setMapError("Failed to load map. Please check your connection and try again.");
+                
+                if (onMapError) {
+                  onMapError(new Error("Failed to load map. Please check your connection and try again."));
+                }
               }
               initPromiseRef.current = null;
               reject("Mapbox failed to load after timeout");
@@ -223,6 +236,11 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
         } catch (error) {
           console.error("Error in map initialization promise:", error);
           setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
+          
+          if (onMapError) {
+            onMapError(new Error("Failed to initialize the map. Please ensure your Mapbox token is valid."));
+          }
+          
           initPromiseRef.current = null;
           reject(error);
         }
@@ -234,11 +252,15 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
       console.error("Error in map initialization:", error);
       if (mountedRef.current) {
         setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
+        
+        if (onMapError) {
+          onMapError(new Error("Failed to initialize the map. Please ensure your Mapbox token is valid."));
+        }
       }
       initPromiseRef.current = null;
       throw error;
     }
-  }, [map, onMapInitialized, isElementInDOM, safelyRemoveMap]);
+  }, [map, onMapInitialized, onMapError, isElementInDOM, safelyRemoveMap]);
   
   // Function to reinitialize the map (useful when token changes)
   const reinitializeMap = useCallback(() => {
