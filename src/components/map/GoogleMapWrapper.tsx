@@ -30,6 +30,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
       .then(() => {
         if (mapRef.current) {
           try {
+            // Center on Pune, India
             const puneCoordinates = { lat: 18.5204, lng: 73.8567 };
             
             const mapInstance = new google.maps.Map(mapRef.current, {
@@ -94,6 +95,12 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
     
     setMarkers(newMarkers);
     setInfoWindows(newInfoWindows);
+
+    // Center the map on the selected doctor's location if one is selected
+    if (selectedDoctor) {
+      map.panTo(selectedDoctor.location);
+      map.setZoom(15); // Zoom in a bit to show the area better
+    }
   }, [map, doctors, selectedDoctor]);
 
   return (
