@@ -6,7 +6,7 @@ import MapError from './MapError';
 import MapStyles from './MapStyles';
 import { useMapbox } from '@/hooks/mapbox/useMapbox';
 import { toast } from '@/components/ui/use-toast';
-import { isCleanupInProgress } from '@/hooks/mapbox/utils';
+import { isCleanupInProgress, resetMapState } from '@/hooks/mapbox/utils';
 
 interface MapboxWrapperProps {
   doctors: Doctor[];
@@ -173,6 +173,8 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   // Cleanup on mount/unmount
   useEffect(() => {
     console.log(`[${componentId.current}] MapboxWrapper mounted`);
+    // Reset global state on mount to ensure clean initialization
+    resetMapState(); 
     isMounted.current = true;
     errorRetryCount.current = 0;
     hasCleanedUp.current = false;
@@ -202,6 +204,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       markersUpdatedRef.current = false;
       initialMarkersSet.current = false;
       errorRetryCount.current = 0;
+      resetMapState(); // Add this to ensure we start fresh
       reinitializeMap();
     }
   };

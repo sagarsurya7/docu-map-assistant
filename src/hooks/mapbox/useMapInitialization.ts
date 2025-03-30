@@ -3,6 +3,7 @@ import { useRef, useState, useCallback } from 'react';
 import { useMapboxLoading } from './useMapboxLoading';
 import { useMapInstance } from './useMapInstance';
 import { useMapError } from './useMapError';
+import { resetMapState } from './utils';
 
 export const useMapInitialization = (
   mapRef: React.RefObject<HTMLDivElement>,
@@ -26,12 +27,17 @@ export const useMapInitialization = (
   
   // Function to initialize the map
   const initMap = useCallback(async () => {
-    if (!mapRef.current || mapInitialized.current || !mountedRef.current) {
+    if (!mapRef.current || !mountedRef.current) {
       console.log("Skipping map initialization", {
         mapRefExists: !!mapRef.current,
-        alreadyInitialized: mapInitialized.current,
         mounted: mountedRef.current
       });
+      return null;
+    }
+    
+    // Allow reinitializing if we're forcing it
+    if (mapInitialized.current) {
+      console.log("Map already initialized, skipping initialization");
       return null;
     }
     
@@ -102,10 +108,13 @@ export const useMapInitialization = (
       return;
     }
     
-    console.log("Reinitializing map");
+    console.log("Reinitializing map - resetting all map flags");
     setIsMapInitialized(false);
     setMapError(null);
     mapInitialized.current = false;
+    
+    // Reset global map state flags
+    resetMapState();
     
     // Initialize new map after a short delay
     const timer = setTimeout(() => {
