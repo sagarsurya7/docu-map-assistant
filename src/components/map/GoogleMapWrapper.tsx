@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Doctor } from '@/types';
 import DoctorInfoCard from './DoctorInfoCard';
-import MapErrorFallback from './MapErrorFallback';
 import { updateMapMarkers } from '@/utils/mapHelpers';
 
 interface GoogleMapWrapperProps {
@@ -21,22 +20,18 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [infoWindows, setInfoWindows] = useState<google.maps.InfoWindow[]>([]);
-  const [mapError, setMapError] = useState<boolean>(false);
   
   // Initialize the map
   useEffect(() => {
-    const RADAR_API_KEY = "YOUR_RADAR_API_KEY";
+    const RADAR_API_KEY = "prj_live_pk_c2520a5ff9a2e8caa3843a2bdbf40c2a7ba06ede";
     
-    console.log("In a real application, you would replace 'YOUR_RADAR_API_KEY' with an actual Radar API key.");
+    console.log("Using Radar API key for map integration");
     
-    // Intentionally use an invalid key to demonstrate the fallback UI
     const loader = new Loader({
       apiKey: RADAR_API_KEY,
       version: "weekly",
       libraries: ["places"]
     });
-
-    let timeoutId: number;
 
     loader
       .load()
@@ -72,26 +67,14 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
             setMap(mapInstance);
           } catch (error) {
             console.error("Error initializing map:", error);
-            setMapError(true);
           }
         }
       })
       .catch(e => {
         console.error("Error loading Google Maps API:", e);
-        setMapError(true);
       });
       
-    // Force error state faster for demo purposes
-    timeoutId = window.setTimeout(() => {
-      if (!map) {
-        console.warn("Map failed to load within timeout period, likely due to invalid API key");
-        setMapError(true);
-      }
-    }, 3000);
-      
     return () => {
-      window.clearTimeout(timeoutId);
-      
       if (markers.length > 0) {
         markers.forEach(marker => marker.setMap(null));
         setMarkers([]);
@@ -106,7 +89,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
 
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
-    if (!map || !google || doctors.length === 0 || mapError) return;
+    if (!map || !google || doctors.length === 0) return;
     
     const { newMarkers, newInfoWindows } = updateMapMarkers(
       map,
@@ -119,25 +102,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
     
     setMarkers(newMarkers);
     setInfoWindows(newInfoWindows);
-  }, [map, doctors, selectedDoctor, mapError]);
-
-  const handleRetry = () => {
-    setMapError(false);
-    // In a real app, you might want to reload the map here
-    // For demo purposes, let's set mapError back to true after a delay
-    setTimeout(() => setMapError(true), 1500);
-  };
-
-  if (mapError) {
-    return (
-      <MapErrorFallback 
-        doctors={doctors}
-        selectedDoctor={selectedDoctor}
-        onSelectDoctor={onSelectDoctor}
-        onRetry={handleRetry}
-      />
-    );
-  }
+  }, [map, doctors, selectedDoctor]);
 
   return (
     <div className="h-full relative">
