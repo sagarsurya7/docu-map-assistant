@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,16 +12,40 @@ interface MapTokenInputProps {
 const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
   const [token, setToken] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const mountedRef = useRef(true);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (token.trim()) {
       setIsSubmitting(true);
-      // Store token in localStorage for future use
-      localStorage.setItem('mapbox-token', token.trim());
-      onSubmit(token.trim());
-      // Reset submitting state after a delay
-      setTimeout(() => setIsSubmitting(false), 1000);
+      
+      try {
+        // Store token in localStorage for future use
+        localStorage.setItem('mapbox-token', token.trim());
+        
+        // Call the onSubmit prop with the token
+        onSubmit(token.trim());
+        
+        // Reset submitting state after a delay
+        setTimeout(() => {
+          if (mountedRef.current) {
+            setIsSubmitting(false);
+          }
+        }, 1000);
+      } catch (error) {
+        console.error("Error submitting token:", error);
+        if (mountedRef.current) {
+          setIsSubmitting(false);
+        }
+      }
     }
   };
 

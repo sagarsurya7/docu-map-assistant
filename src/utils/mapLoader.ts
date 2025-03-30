@@ -3,18 +3,27 @@
 let MAPBOX_ACCESS_TOKEN = ""; 
 
 // Get token from localStorage if it exists
-const storedToken = localStorage.getItem('mapbox-token');
-if (storedToken) {
-  MAPBOX_ACCESS_TOKEN = storedToken;
+let storedToken: string | null = null;
+try {
+  storedToken = localStorage.getItem('mapbox-token');
+  if (storedToken) {
+    MAPBOX_ACCESS_TOKEN = storedToken;
+  }
+} catch (e) {
+  console.error("Error accessing localStorage:", e);
 }
 
 export const setMapboxToken = (token: string) => {
-  MAPBOX_ACCESS_TOKEN = token;
-  localStorage.setItem('mapbox-token', token);
-  
-  // Update token for any existing mapboxgl instance
-  if (window.mapboxgl) {
-    window.mapboxgl.accessToken = token;
+  try {
+    MAPBOX_ACCESS_TOKEN = token;
+    localStorage.setItem('mapbox-token', token);
+    
+    // Update token for any existing mapboxgl instance
+    if (window.mapboxgl) {
+      window.mapboxgl.accessToken = token;
+    }
+  } catch (e) {
+    console.error("Error setting mapbox token:", e);
   }
 };
 
@@ -34,6 +43,21 @@ export const initializeMapbox = () => {
     try {
       isLoadingMapbox = true;
       
+      // If Mapbox is already loaded
+      if (window.mapboxgl) {
+        console.log("Mapbox already loaded, setting token");
+        if (MAPBOX_ACCESS_TOKEN) {
+          window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+          isLoadingMapbox = false;
+          resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
+        } else {
+          console.warn("No Mapbox access token provided");
+          isLoadingMapbox = false;
+          reject("No Mapbox access token provided");
+        }
+        return;
+      }
+      
       // Load Mapbox GL JS only once
       if (!document.getElementById('mapbox-gl-script')) {
         console.log("Loading Mapbox GL JS");
@@ -47,61 +71,84 @@ export const initializeMapbox = () => {
         
         // Add Mapbox CSS
         const mapboxCss = document.createElement('link');
+        mapboxCss.id = 'mapbox-gl-css';
         mapboxCss.rel = 'stylesheet';
         mapboxCss.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
         
-        // Append elements to head - but check if head exists first
-        if (document.head) {
-          document.head.appendChild(mapboxScript);
-          document.head.appendChild(mapboxCss);
-        } else {
-          console.error("Document head not available");
-          reject("Document head not available");
+        // Safety checks for document structure
+        if (!document.head) {
+          const err = "Document head not available";
+          console.error(err);
           isLoadingMapbox = false;
+          reject(err);
           return;
         }
         
+        // Append elements to head
+        document.head.appendChild(mapboxScript);
+        document.head.appendChild(mapboxCss);
+        
         // Initialize Mapbox once script is loaded
         mapboxScript.onload = () => {
+          console.log("Mapbox script loaded");
+          
+          // Give a moment for the script to initialize
+          setTimeout(() => {
+            if (window.mapboxgl) {
+              console.log("Mapbox GL JS loaded successfully");
+              if (MAPBOX_ACCESS_TOKEN) {
+                window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+                isLoadingMapbox = false;
+                resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
+              } else {
+                const err = "No Mapbox access token provided";
+                console.warn(err);
+                isLoadingMapbox = false;
+                reject(err);
+              }
+            } else {
+              const err = "Mapbox object not available after script load";
+              console.error(err);
+              isLoadingMapbox = false;
+              reject(err);
+            }
+          }, 100);
+        };
+        
+        mapboxScript.onerror = (error) => {
+          const err = "Error loading Mapbox GL JS:";
+          console.error(err, error);
+          isLoadingMapbox = false;
+          reject(err);
+        };
+      } else {
+        // Script tag exists but mapboxgl object might not be ready yet
+        const checkMapboxInterval = setInterval(() => {
           if (window.mapboxgl) {
-            console.log("Mapbox GL JS loaded successfully");
+            clearInterval(checkMapboxInterval);
             if (MAPBOX_ACCESS_TOKEN) {
               window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
               isLoadingMapbox = false;
               resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
             } else {
-              console.warn("No Mapbox access token provided");
+              const err = "No Mapbox access token provided";
+              console.warn(err);
               isLoadingMapbox = false;
-              reject("No Mapbox access token provided");
+              reject(err);
             }
-          } else {
-            console.error("Mapbox object not available after script load");
-            isLoadingMapbox = false;
-            reject("Failed to load Mapbox GL JS");
           }
-        };
+        }, 100);
         
-        mapboxScript.onerror = (error) => {
-          console.error("Error loading Mapbox GL JS:", error);
-          isLoadingMapbox = false;
-          reject("Failed to load Mapbox GL JS");
-        };
-      } else {
-        // Script already loaded
-        if (window.mapboxgl) {
-          if (MAPBOX_ACCESS_TOKEN) {
-            window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+        // Set a timeout to avoid infinite waiting
+        setTimeout(() => {
+          clearInterval(checkMapboxInterval);
+          if (!window.mapboxgl) {
+            const err = "Mapbox GL JS not available after timeout";
+            console.error(err);
             isLoadingMapbox = false;
-            resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
-          } else {
-            console.warn("No Mapbox access token provided");
-            isLoadingMapbox = false;
-            reject("No Mapbox access token provided");
+            reject(err);
           }
-        } else {
-          isLoadingMapbox = false;
-          reject("Mapbox GL JS not available");
-        }
+        }, 5000);
       }
     } catch (error) {
       console.error("Error in initializeMapbox:", error);
@@ -111,4 +158,9 @@ export const initializeMapbox = () => {
   });
   
   return mapboxLoadPromise;
+};
+
+// Helper to safely check if mapbox is loaded and ready
+export const isMapboxLoaded = () => {
+  return !!window.mapboxgl;
 };

@@ -15,10 +15,16 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
   const [markers, setMarkers] = useState<any[]>([]);
   const [popups, setPopups] = useState<any[]>([]);
   const mapInitialized = useRef(false);
+  const mountedRef = useRef(true);
+  
+  // Function to safely check if element is in DOM
+  const isElementInDOM = useCallback((element: HTMLElement | null) => {
+    return element && document.body.contains(element);
+  }, []);
   
   // Function to initialize the map
   const initMap = useCallback(async () => {
-    if (!mapRef.current || mapInitialized.current) return;
+    if (!mapRef.current || mapInitialized.current || !mountedRef.current) return;
     
     try {
       console.log("Starting map initialization");
@@ -31,6 +37,11 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
       const initInterval = setInterval(() => {
         attempts++;
         
+        if (!mountedRef.current) {
+          clearInterval(initInterval);
+          return;
+        }
+        
         if (window.mapboxgl) {
           clearInterval(initInterval);
           
@@ -42,11 +53,15 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
           try {
             // Clean up previous map instance if it exists
             if (map) {
-              map.remove();
+              try {
+                map.remove();
+              } catch (error) {
+                console.log("Error removing old map instance:", error);
+              }
             }
             
             // Ensure the container is still in the DOM before creating the map
-            if (mapRef.current && document.body.contains(mapRef.current)) {
+            if (mapRef.current && isElementInDOM(mapRef.current)) {
               const mapInstance = new window.mapboxgl.Map({
                 container: mapRef.current,
                 style: 'mapbox://styles/mapbox/light-v11',
@@ -60,6 +75,8 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
               console.log("Map instance created");
               
               mapInstance.on('load', () => {
+                if (!mountedRef.current) return;
+                
                 console.log("Map loaded");
                 setMap(mapInstance);
                 setIsMapInitialized(true);
@@ -70,42 +87,73 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
                   onMapInitialized(mapInstance);
                 }
               });
+              
+              // Handle map errors
+              mapInstance.on('error', (e: any) => {
+                if (!mountedRef.current) return;
+                console.error("Mapbox error:", e);
+                setMapError(`Map error: ${e.error?.message || 'Unknown error'}`);
+              });
             } else {
               console.error("Map container is not in the DOM");
-              setMapError("Map container is not in the DOM");
+              if (mountedRef.current) {
+                setMapError("Map container is not in the DOM");
+              }
             }
             
           } catch (mapError) {
             console.error("Error creating map instance:", mapError);
-            setMapError("Error creating map. Please check your Mapbox token.");
+            if (mountedRef.current) {
+              setMapError("Error creating map. Please check your Mapbox token.");
+            }
           }
         } else if (attempts >= maxAttempts) {
           clearInterval(initInterval);
           console.error("Mapbox failed to load after timeout");
-          setMapError("Failed to load map. Please check your connection and try again.");
+          if (mountedRef.current) {
+            setMapError("Failed to load map. Please check your connection and try again.");
+          }
         }
       }, 500);
       
+      return () => clearInterval(initInterval);
+      
     } catch (error) {
       console.error("Error in map initialization:", error);
-      setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
+      if (mountedRef.current) {
+        setMapError("Failed to initialize the map. Please ensure your Mapbox token is valid.");
+      }
     }
-  }, [map, onMapInitialized]);
+  }, [map, onMapInitialized, isElementInDOM]);
   
   // Function to reinitialize the map (useful when token changes)
   const reinitializeMap = useCallback(() => {
+    if (!mountedRef.current) return;
+    
     setIsMapInitialized(false);
     setMapError(null);
     mapInitialized.current = false;
     
     // Clean up existing markers and popups
     markers.forEach(marker => {
-      if (marker) marker.remove();
+      if (marker) {
+        try {
+          marker.remove();
+        } catch (e) {
+          console.log("Error removing marker:", e);
+        }
+      }
     });
     setMarkers([]);
     
     popups.forEach(popup => {
-      if (popup) popup.remove();
+      if (popup) {
+        try {
+          popup.remove();
+        } catch (e) {
+          console.log("Error removing popup:", e);
+        }
+      }
     });
     setPopups([]);
     
@@ -114,45 +162,74 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
       try {
         map.remove();
       } catch (error) {
-        console.error("Error removing map:", error);
+        console.log("Error removing map:", error);
       }
       setMap(null);
     }
     
     // Initialize new map
-    initMap();
+    setTimeout(() => {
+      if (mountedRef.current) {
+        initMap();
+      }
+    }, 100);
   }, [initMap, map, markers, popups]);
   
   // Initialize map on component mount
   useEffect(() => {
+    mountedRef.current = true;
     initMap();
     
     // Cleanup function
     return () => {
-      if (map) {
-        try {
-          // Clean up markers and popups first
-          markers.forEach(marker => {
-            if (marker) marker.remove();
-          });
-          
-          popups.forEach(popup => {
-            if (popup) popup.remove();
-          });
-          
-          // Then remove the map
-          map.remove();
-        } catch (error) {
-          console.error("Error during map cleanup:", error);
+      mountedRef.current = false;
+      
+      try {
+        // Clean up markers and popups first
+        markers.forEach(marker => {
+          if (marker) {
+            try {
+              marker.remove();
+            } catch (e) {
+              console.log("Error removing marker during cleanup:", e);
+            }
+          }
+        });
+        
+        popups.forEach(popup => {
+          if (popup) {
+            try {
+              popup.remove();
+            } catch (e) {
+              console.log("Error removing popup during cleanup:", e);
+            }
+          }
+        });
+        
+        // Then remove the map
+        if (map) {
+          try {
+            map.remove();
+          } catch (error) {
+            console.log("Error during map cleanup:", error);
+          }
         }
+      } catch (error) {
+        console.log("General error during cleanup:", error);
       }
     };
   }, [initMap]);
 
   // Function to update markers
   const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
-    if (!map || !isMapInitialized || !window.mapboxgl) {
+    if (!map || !isMapInitialized || !window.mapboxgl || !mountedRef.current) {
       console.log("Cannot update markers, map not ready");
+      return;
+    }
+    
+    // Check if map container still exists
+    if (!map.getContainer() || !isElementInDOM(map.getContainer())) {
+      console.log("Map container no longer in DOM, cannot update markers");
       return;
     }
     
@@ -161,7 +238,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
       try {
         if (marker) marker.remove();
       } catch (e) {
-        console.error("Error removing marker:", e);
+        console.log("Error removing marker:", e);
       }
     });
     
@@ -169,7 +246,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
       try {
         if (popup) popup.remove();
       } catch (e) {
-        console.error("Error removing popup:", e);
+        console.log("Error removing popup:", e);
       }
     });
     
@@ -209,39 +286,50 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
         }
         
         // Check if map is still valid
-        if (map && !map._removed) {
+        if (map && !map._removed && map.getContainer() && isElementInDOM(map.getContainer())) {
           // Create the marker
           const marker = new window.mapboxgl.Marker(el)
-            .setLngLat([doctor.location.lng, doctor.location.lat])
-            .setPopup(popup);
+            .setLngLat([doctor.location.lng, doctor.location.lat]);
+            
+          // Only add popup to marker if map is still valid
+          try {
+            marker.setPopup(popup);
+          } catch (e) {
+            console.log("Error setting popup:", e);
+          }
             
           // Only add to map if map is still valid
-          if (map.getContainer() && document.body.contains(map.getContainer())) {
+          try {
             marker.addTo(map);
             newMarkers.push(marker);
+          } catch (e) {
+            console.log("Error adding marker to map:", e);
           }
           
           // Show popup for selected doctor
-          if (isSelected && map.getContainer() && document.body.contains(map.getContainer())) {
-            // Center map on selected doctor
-            map.flyTo({
-              center: [doctor.location.lng, doctor.location.lat],
-              zoom: 15,
-              essential: true
-            });
-            
-            // Add popup to map if the map exists
-            popup.addTo(map);
+          if (isSelected) {
+            try {
+              // Center map on selected doctor
+              map.flyTo({
+                center: [doctor.location.lng, doctor.location.lat],
+                zoom: 15,
+                essential: true
+              });
+            } catch (e) {
+              console.log("Error flying to location:", e);
+            }
           }
         }
       } catch (error) {
-        console.error("Error creating marker for doctor:", doctor.id, error);
+        console.log("Error creating marker for doctor:", doctor.id, error);
       }
     });
     
-    setMarkers(newMarkers);
-    setPopups(newPopups);
-  }, [map, isMapInitialized, markers, popups]);
+    if (mountedRef.current) {
+      setMarkers(newMarkers);
+      setPopups(newPopups);
+    }
+  }, [map, isMapInitialized, markers, popups, isElementInDOM]);
 
   return { 
     mapRef, 
