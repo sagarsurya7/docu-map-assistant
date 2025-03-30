@@ -72,16 +72,30 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     }
     
     if (isMapInitialized && doctors.length > 0 && isMounted.current) {
+      console.log("Scheduling marker update", { 
+        initialized: isMapInitialized, 
+        doctorsCount: doctors.length 
+      });
+      
       // Add delay to ensure map is ready
       updateMarkersTimeoutRef.current = setTimeout(() => {
         if (isMounted.current && mapRef.current) {
+          console.log("Executing scheduled marker update");
           try {
             updateMarkers(doctors, selectedDoctor);
           } catch (error) {
             console.error("Error updating markers:", error);
           }
+        } else {
+          console.log("Component unmounted or mapRef not available, skipping marker update");
         }
       }, 500);
+    } else {
+      console.log("Not updating markers due to conditions not met", { 
+        initialized: isMapInitialized, 
+        doctorsCount: doctors.length,
+        isMounted: isMounted.current
+      });
     }
     
     return () => {
@@ -93,9 +107,11 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
 
   // Cleanup on mount/unmount
   useEffect(() => {
+    console.log("MapboxWrapper mounted");
     isMounted.current = true;
     
     return () => {
+      console.log("MapboxWrapper unmounting");
       isMounted.current = false;
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);

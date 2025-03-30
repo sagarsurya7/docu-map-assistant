@@ -11,11 +11,38 @@ export const isElementInDOM = (element: HTMLElement | null) => {
 // Helper function to safely check if map is valid and can be operated on
 export const isMapValid = (mapInstance: any) => {
   try {
-    return mapInstance && 
-           !mapInstance._removed && 
-           mapInstance.getContainer && 
-           typeof mapInstance.getContainer === 'function' &&
-           isElementInDOM(mapInstance.getContainer());
+    // Check if the map instance exists
+    if (!mapInstance) {
+      console.log("Map instance is null or undefined");
+      return false;
+    }
+
+    // Check if the map has been removed
+    if (mapInstance._removed) {
+      console.log("Map has been removed (_removed flag is true)");
+      return false;
+    }
+
+    // Check if getContainer method exists
+    if (!mapInstance.getContainer || typeof mapInstance.getContainer !== 'function') {
+      console.log("Map getContainer method is missing or not a function");
+      return false;
+    }
+
+    // Check if container is in DOM
+    const container = mapInstance.getContainer();
+    if (!isElementInDOM(container)) {
+      console.log("Map container is not in DOM");
+      return false;
+    }
+
+    // Additional check to verify map is fully initialized
+    if (!mapInstance.loaded()) {
+      console.log("Map is not fully loaded yet");
+      return false;
+    }
+
+    return true;
   } catch (e) {
     console.log("Error checking map validity:", e);
     return false;
@@ -49,6 +76,15 @@ export const safelyRemoveMap = (mapInstance: any) => {
       
       // Now safely remove the map
       mapInstance.remove();
+    } else {
+      // If map isn't valid, it may still have a _container property we can clean up
+      if (mapInstance._container && isElementInDOM(mapInstance._container)) {
+        try {
+          mapInstance.remove();
+        } catch (e) {
+          console.log("Error removing invalid map:", e);
+        }
+      }
     }
   } catch (error) {
     console.log("Error during map cleanup:", error);
