@@ -99,15 +99,19 @@ const MobileView: React.FC<MobileViewProps> = ({
       )}
       
       {mobileView === 'chat' && (
-        <div className="h-full relative">
-          <ChatBot />
-          <Button 
-            className="absolute top-4 left-4 z-10 h-10 w-10 rounded-full bg-white shadow-lg text-medical p-0"
-            variant="outline"
-            onClick={() => setMobileView('list')}
-          >
-            <X className="h-5 w-5" />
-          </Button>
+        <div className="h-full flex flex-col relative">
+          <div className="absolute top-4 left-4 z-10">
+            <Button 
+              className="h-10 w-10 rounded-full bg-white shadow-lg text-medical p-0"
+              variant="outline"
+              onClick={() => setMobileView('list')}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden pt-16">
+            <ChatBot />
+          </div>
         </div>
       )}
     </div>

@@ -48,7 +48,7 @@ const ChatBot: React.FC = () => {
 
       <ChatMessageList messages={messages} isTyping={isTyping} />
 
-      <CardFooter className="pt-0 px-4 pb-4">
+      <CardFooter className="pt-0 px-4 pb-4 sticky bottom-0 bg-white">
         <ChatInput onSendMessage={handleSendMessage} />
       </CardFooter>
     </Card>

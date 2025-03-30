@@ -25,20 +25,20 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
   };
 
   return (
-    <div className="border rounded-lg w-full flex items-center overflow-hidden bg-white">
+    <div className="border rounded-lg w-full flex items-center overflow-hidden bg-white shadow-sm">
       <Input
         placeholder="Type your symptoms or question..."
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyPress}
-        className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-10"
       />
-      <div className="flex items-center px-3 gap-2">
+      <div className="flex items-center px-2 gap-1 flex-shrink-0">
         <Button
           type="button"
           size="icon"
           variant="ghost"
-          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground sm:flex hidden"
         >
           <Paperclip className="h-4 w-4" />
         </Button>
@@ -46,7 +46,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
           type="button"
           size="icon"
           variant="ghost"
-          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground sm:flex hidden"
         >
           <MicIcon className="h-4 w-4" />
         </Button>
@@ -54,7 +54,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
           type="button"
           size="icon"
           onClick={handleSendMessage}
-          className="h-8 w-8 rounded-full bg-medical hover:bg-medical-dark text-white"
+          className="h-8 w-8 rounded-full bg-medical hover:bg-medical-dark text-white flex-shrink-0"
         >
           <Send className="h-4 w-4" />
         </Button>
