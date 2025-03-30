@@ -4,7 +4,7 @@ import { Doctor } from '@/types';
 import DoctorInfoCard from './DoctorInfoCard';
 import MapError from './MapError';
 import MapStyles from './MapStyles';
-import { useMapbox } from '@/hooks/useMapbox';
+import { useMapbox } from '@/hooks/mapbox/useMapbox';
 import MapTokenInput from './MapTokenInput';
 import { setMapboxToken, getMapboxToken } from '@/utils/mapLoader';
 import { toast } from '@/components/ui/use-toast';
