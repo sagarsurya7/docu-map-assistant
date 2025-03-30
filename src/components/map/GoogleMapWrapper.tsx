@@ -19,57 +19,67 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
   const [map, setMap] = useState<any>(null);
   const [markers, setMarkers] = useState<any[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [isMapInitialized, setIsMapInitialized] = useState(false);
   
   // Initialize the Radar map
   useEffect(() => {
-    console.log("Initializing Radar Maps");
-    
     if (!mapRef.current) return;
     
-    const initMap = () => {
+    const initMap = async () => {
       try {
-        initializeRadarMap();
+        console.log("Starting map initialization");
+        await initializeRadarMap();
         
-        // Wait for Radar Maps to load
-        const checkRadarMaps = setInterval(() => {
+        // Wait for Radar Maps to load with a timeout
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        const initInterval = setInterval(() => {
+          attempts++;
+          
           if (window.radar && window.radar.maps) {
-            clearInterval(checkRadarMaps);
+            clearInterval(initInterval);
+            
+            console.log("Radar Maps object available, creating map");
             
             // Center on Pune, India
             const puneCoordinates = { lat: 18.5204, lng: 73.8567 };
             
-            const mapInstance = new window.radar.maps.Map({
-              element: mapRef.current,
-              center: puneCoordinates,
-              zoom: 13,
-              baseMap: 'light'
-            });
-            
-            setMap(mapInstance);
-            setMapError(null);
-            
-            // After map loads, add markers and pan to the selected doctor if one is already selected
-            addMarkersToMap(mapInstance, doctors, selectedDoctor);
-            
-            if (selectedDoctor) {
-              mapInstance.setCenter(selectedDoctor.location);
-              mapInstance.setZoom(15);
+            try {
+              const mapInstance = new window.radar.maps.Map({
+                element: mapRef.current,
+                center: puneCoordinates,
+                zoom: 12,
+                baseMap: 'light'
+              });
+              
+              console.log("Map instance created:", mapInstance);
+              setMap(mapInstance);
+              setIsMapInitialized(true);
+              setMapError(null);
+              
+              // Add markers after map is created
+              if (doctors.length > 0) {
+                addMarkersToMap(mapInstance, doctors, selectedDoctor);
+              }
+              
+              if (selectedDoctor) {
+                mapInstance.setCenter(selectedDoctor.location);
+                mapInstance.setZoom(15);
+              }
+            } catch (mapError) {
+              console.error("Error creating map instance:", mapError);
+              setMapError("Error creating map. Please refresh the page.");
             }
-            
-            console.log("Radar Map initialized successfully");
+          } else if (attempts >= maxAttempts) {
+            clearInterval(initInterval);
+            console.error("Radar Maps failed to load after timeout");
+            setMapError("Failed to load map. Please refresh and try again.");
           }
         }, 500);
         
-        // Set a timeout to handle case where Radar Maps fails to load
-        setTimeout(() => {
-          clearInterval(checkRadarMaps);
-          if (!window.radar || !window.radar.maps) {
-            setMapError("Failed to load Radar Maps. Please refresh the page.");
-          }
-        }, 10000);
-        
       } catch (error) {
-        console.error("Error initializing Radar map:", error);
+        console.error("Error in map initialization:", error);
         setMapError("Failed to initialize the map. Please try refreshing the page.");
       }
     };
@@ -84,30 +94,33 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
             marker.remove();
           }
         });
-        setMarkers([]);
       }
     };
   }, []);
 
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
-    if (!map || !window.radar || !window.radar.maps || doctors.length === 0) return;
+    if (!isMapInitialized || !map || !window.radar || !window.radar.maps || doctors.length === 0) return;
     
+    console.log("Updating markers for", doctors.length, "doctors");
     try {
       addMarkersToMap(map, doctors, selectedDoctor);
       
       // Center the map on the selected doctor's location if one is selected
       if (selectedDoctor) {
+        console.log("Centering on selected doctor:", selectedDoctor.name);
         map.setCenter(selectedDoctor.location);
         map.setZoom(15); // Zoom in a bit to show the area better
       }
     } catch (error) {
       console.error("Error updating map markers:", error);
     }
-  }, [map, doctors, selectedDoctor]);
+  }, [isMapInitialized, map, doctors, selectedDoctor]);
   
   // Function to add markers to the map
   const addMarkersToMap = (mapInstance: any, doctors: Doctor[], selectedDoc: Doctor | null) => {
+    console.log("Adding markers to map");
+    
     // Clear existing markers
     markers.forEach(marker => {
       if (marker && marker.remove) {
@@ -120,6 +133,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
     doctors.forEach(doctor => {
       try {
         const isSelected = selectedDoc?.id === doctor.id;
+        console.log("Creating marker for doctor:", doctor.name, doctor.location);
         
         // Create marker with Radar Maps
         const marker = new window.radar.maps.Marker({
@@ -137,6 +151,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
         
         // Add click event to marker
         marker.on('click', () => {
+          console.log("Marker clicked for doctor:", doctor.name);
           onSelectDoctor(doctor);
         });
         
@@ -172,6 +187,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
     });
     
     setMarkers(newMarkers);
+    console.log("Added", newMarkers.length, "markers to map");
   };
 
   return (
@@ -185,6 +201,12 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
           @keyframes bounce {
             from { transform: translateY(0); }
             to { transform: translateY(-10px); }
+          }
+          
+          /* Ensure map container takes full height */
+          .radar-map-container {
+            height: 100%;
+            width: 100%;
           }
         `}
       </style>
@@ -201,7 +223,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
           </div>
         </div>
       ) : (
-        <div ref={mapRef} className="h-full w-full"></div>
+        <div ref={mapRef} className="h-full w-full radar-map-container"></div>
       )}
       {selectedDoctor && !mapError && (
         <DoctorInfoCard 
