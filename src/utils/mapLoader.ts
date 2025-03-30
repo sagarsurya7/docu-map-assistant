@@ -1,52 +1,53 @@
 
-// Use Radar Maps API instead of Google Maps
-const RADAR_API_KEY = "prj_live_pk_c2520a5ff9a2e8caa3843a2bdbf40c2a7ba06ede"; 
+// Use Mapbox instead of Radar Maps
+const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoibG92YWJsZS1kZXYiLCJhIjoiY2xzdzU0ZWRnMWRwYjJpcXc1cHI3MDB5MyJ9.tEFciJFY34Ah5QZBJqtlhg"; 
 
-export const initializeRadarMap = () => {
+export const initializeMapbox = () => {
   return new Promise((resolve, reject) => {
     try {
-      // Load Radar Maps SDK only once
-      if (!document.getElementById('radar-maps-script')) {
-        console.log("Loading Radar Maps SDK");
+      // Load Mapbox GL JS only once
+      if (!document.getElementById('mapbox-gl-script')) {
+        console.log("Loading Mapbox GL JS");
         
-        // Create and load Radar SDK first
-        const radarScript = document.createElement('script');
-        radarScript.id = 'radar-sdk-script';
-        radarScript.src = 'https://js.radar.com/v3/radar.min.js';
-        radarScript.async = true;
-        radarScript.defer = true;
-        document.head.appendChild(radarScript);
+        // Create and load Mapbox GL JS
+        const mapboxScript = document.createElement('script');
+        mapboxScript.id = 'mapbox-gl-script';
+        mapboxScript.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+        mapboxScript.async = true;
+        mapboxScript.defer = true;
+        document.head.appendChild(mapboxScript);
         
-        // Create and load Radar Maps SDK
-        const mapsScript = document.createElement('script');
-        mapsScript.id = 'radar-maps-script';
-        mapsScript.src = 'https://js.radar.com/maps/v1';
-        mapsScript.async = true;
-        mapsScript.defer = true;
-        document.head.appendChild(mapsScript);
+        // Add Mapbox CSS
+        const mapboxCss = document.createElement('link');
+        mapboxCss.rel = 'stylesheet';
+        mapboxCss.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+        document.head.appendChild(mapboxCss);
         
-        // Initialize Radar once both scripts are loaded
-        mapsScript.onload = () => {
-          if (window.Radar) {
-            console.log("Radar Maps SDK loaded successfully");
-            window.Radar.initialize(RADAR_API_KEY);
-            resolve({ apiKey: RADAR_API_KEY });
+        // Initialize Mapbox once script is loaded
+        mapboxScript.onload = () => {
+          if (window.mapboxgl) {
+            console.log("Mapbox GL JS loaded successfully");
+            window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+            resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
           } else {
-            console.error("Radar object not available after script load");
-            reject("Failed to load Radar Maps SDK");
+            console.error("Mapbox object not available after script load");
+            reject("Failed to load Mapbox GL JS");
           }
         };
         
-        mapsScript.onerror = (error) => {
-          console.error("Error loading Radar Maps SDK:", error);
-          reject("Failed to load Radar Maps SDK");
+        mapboxScript.onerror = (error) => {
+          console.error("Error loading Mapbox GL JS:", error);
+          reject("Failed to load Mapbox GL JS");
         };
       } else {
-        // Scripts already loaded
-        resolve({ apiKey: RADAR_API_KEY });
+        // Script already loaded
+        if (window.mapboxgl) {
+          window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+        }
+        resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
       }
     } catch (error) {
-      console.error("Error in initializeRadarMap:", error);
+      console.error("Error in initializeMapbox:", error);
       reject(error);
     }
   });

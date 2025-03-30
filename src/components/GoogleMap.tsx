@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Doctor } from '@/types';
-import RadarMapWrapper from './map/RadarMapWrapper';
+import MapboxWrapper from './map/MapboxWrapper';
 
 interface GoogleMapProps {
   doctors: Doctor[];
@@ -15,7 +15,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   onSelectDoctor 
 }) => {
   return (
-    <RadarMapWrapper
+    <MapboxWrapper
       doctors={doctors}
       selectedDoctor={selectedDoctor}
       onSelectDoctor={onSelectDoctor}
