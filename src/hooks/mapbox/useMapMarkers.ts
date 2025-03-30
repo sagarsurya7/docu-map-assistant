@@ -47,6 +47,8 @@ export const useMapMarkers = (
       return;
     }
     
+    console.log("updateMarkers called with map:", map);
+    
     if (!map || !isMapInitialized || !window.mapboxgl || !mountedRef.current) {
       console.log("Cannot update markers, map not ready", {
         mapExists: !!map,
@@ -59,7 +61,7 @@ export const useMapMarkers = (
     
     // Check if map is valid before proceeding
     if (!isMapValid(map)) {
-      console.log("Map container no longer in DOM, cannot update markers");
+      console.log("Map container no longer in DOM or map is invalid, cannot update markers");
       return;
     }
     
@@ -75,6 +77,8 @@ export const useMapMarkers = (
       
       // Only add markers if doctors exist and map is valid
       if (doctors.length > 0 && isMapValid(map)) {
+        console.log(`Adding ${doctors.length} markers to map`);
+        
         doctors.forEach(doctor => {
           try {
             const isSelected = selectedDoctor?.id === doctor.id;
@@ -109,6 +113,8 @@ export const useMapMarkers = (
             
             // Final check before adding marker to map
             if (isMapValid(map)) {
+              console.log(`Adding marker for doctor ${doctor.id} at [${doctor.location.lng}, ${doctor.location.lat}]`);
+              
               // Create the marker
               const marker = new window.mapboxgl.Marker(el)
                 .setLngLat([doctor.location.lng, doctor.location.lat]);
@@ -125,6 +131,7 @@ export const useMapMarkers = (
                 if (isMapValid(map)) {
                   marker.addTo(map);
                   newMarkers.push(marker);
+                  console.log(`Successfully added marker for doctor ${doctor.id}`);
                 }
               } catch (e) {
                 console.log("Error adding marker to map:", e);
@@ -133,6 +140,7 @@ export const useMapMarkers = (
               // Show popup for selected doctor
               if (isSelected && isMapValid(map)) {
                 try {
+                  console.log(`Flying to selected doctor ${doctor.id}`);
                   // Center map on selected doctor with a smooth animation
                   map.flyTo({
                     center: [doctor.location.lng, doctor.location.lat],

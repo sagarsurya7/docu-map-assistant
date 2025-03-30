@@ -7,6 +7,7 @@ import { useMapError } from './useMapError';
 export const useMapInitialization = (
   mapRef: React.RefObject<HTMLDivElement>,
   map: any,
+  setMap: React.Dispatch<React.SetStateAction<any>>,
   onMapInitialized?: (mapInstance: any) => void,
   onMapError?: (error: Error) => void
 ) => {
@@ -41,9 +42,12 @@ export const useMapInitialization = (
       if (!mountedRef.current) return;
       
       // Update state
+      setMap(mapInstance);
       setIsMapInitialized(true);
       setMapError(null);
       mapInitialized.current = true;
+      
+      console.log("Map initialized successfully", mapInstance);
       
       // Notify parent component
       if (onMapInitialized) {
@@ -65,6 +69,7 @@ export const useMapInitialization = (
     }
   }, [
     mapRef, 
+    setMap,
     onMapInitialized, 
     loadMapboxWithTimeout, 
     createMapInstance, 

@@ -37,8 +37,13 @@ export const isMapValid = (mapInstance: any) => {
     }
 
     // Additional check to verify map is fully initialized
-    if (!mapInstance.loaded()) {
-      console.log("Map is not fully loaded yet");
+    try {
+      if (typeof mapInstance.loaded === 'function' && !mapInstance.loaded()) {
+        console.log("Map is not fully loaded yet");
+        return false;
+      }
+    } catch (e) {
+      console.log("Error checking if map is loaded:", e);
       return false;
     }
 
@@ -51,11 +56,18 @@ export const isMapValid = (mapInstance: any) => {
 
 // Function to safely remove map
 export const safelyRemoveMap = (mapInstance: any) => {
-  if (!mapInstance) return;
+  if (!mapInstance) {
+    console.log("No map instance to remove");
+    return;
+  }
   
   try {
+    console.log("Attempting to remove map", mapInstance);
+    
     // First check if map is valid before trying to remove it
     if (isMapValid(mapInstance)) {
+      console.log("Map is valid, removing it properly");
+      
       // Try to remove event listeners first to avoid removeEventListener errors
       try {
         const container = mapInstance.getContainer();
@@ -76,14 +88,20 @@ export const safelyRemoveMap = (mapInstance: any) => {
       
       // Now safely remove the map
       mapInstance.remove();
+      console.log("Map removed successfully");
     } else {
+      console.log("Map isn't valid, attempting alternative cleanup");
+      
       // If map isn't valid, it may still have a _container property we can clean up
       if (mapInstance._container && isElementInDOM(mapInstance._container)) {
         try {
           mapInstance.remove();
+          console.log("Map removed via fallback method");
         } catch (e) {
           console.log("Error removing invalid map:", e);
         }
+      } else {
+        console.log("Map container not in DOM, no need to remove");
       }
     }
   } catch (error) {

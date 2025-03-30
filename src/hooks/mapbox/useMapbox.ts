@@ -18,13 +18,19 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
     setMapError,
     initMap,
     reinitializeMap
-  } = useMapInitialization(mapRef, map, onMapInitialized, onMapError);
+  } = useMapInitialization(mapRef, map, setMap, onMapInitialized, onMapError);
   
   // Use the map markers hook
   const {
-    updateMarkers,
+    updateMarkers: updateMarkersInternal,
     cleanupMarkers
   } = useMapMarkers(map, isMapInitialized, mountedRef);
+  
+  // Wrapper for updateMarkers to ensure map is passed
+  const updateMarkers = (doctors: Doctor[], selectedDoctor: Doctor | null) => {
+    console.log("useMapbox.updateMarkers called, map:", map);
+    updateMarkersInternal(doctors, selectedDoctor);
+  };
   
   // Initialize map on component mount
   useEffect(() => {
@@ -35,12 +41,7 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
     const timer = setTimeout(() => {
       if (mountedRef.current && mapRef.current) {
         console.log("Calling initMap from useMapbox effect");
-        initMap().then(mapInstance => {
-          if (mountedRef.current) {
-            console.log("Map initialization succeeded, setting map instance");
-            setMap(mapInstance);
-          }
-        }).catch(error => {
+        initMap().catch(error => {
           console.error("Map initialization failed:", error);
         });
       } else {

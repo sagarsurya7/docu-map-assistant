@@ -25,6 +25,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   // Initialize Mapbox with callbacks
   const { 
     mapRef, 
+    map,
     isMapInitialized, 
     mapError, 
     updateMarkers, 
@@ -65,27 +66,32 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     if (isMapInitialized && doctors.length > 0 && isMounted.current) {
       console.log("Scheduling marker update", { 
         initialized: isMapInitialized, 
-        doctorsCount: doctors.length 
+        doctorsCount: doctors.length,
+        mapExists: !!map
       });
       
       // Add delay to ensure map is ready
       updateMarkersTimeoutRef.current = setTimeout(() => {
-        if (isMounted.current && mapRef.current) {
-          console.log("Executing scheduled marker update");
+        if (isMounted.current && map) {
+          console.log("Executing scheduled marker update with map:", map);
           try {
             updateMarkers(doctors, selectedDoctor);
           } catch (error) {
             console.error("Error updating markers:", error);
           }
         } else {
-          console.log("Component unmounted or mapRef not available, skipping marker update");
+          console.log("Component unmounted or map not available, skipping marker update", { 
+            isMounted: isMounted.current, 
+            mapExists: !!map 
+          });
         }
-      }, 500);
+      }, 1000); // Increased timeout to ensure map is fully initialized
     } else {
       console.log("Not updating markers due to conditions not met", { 
         initialized: isMapInitialized, 
         doctorsCount: doctors.length,
-        isMounted: isMounted.current
+        isMounted: isMounted.current,
+        mapExists: !!map
       });
     }
     
@@ -94,7 +100,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         clearTimeout(updateMarkersTimeoutRef.current);
       }
     };
-  }, [isMapInitialized, doctors, selectedDoctor, updateMarkers, mapRef]);
+  }, [isMapInitialized, doctors, selectedDoctor, updateMarkers, map]);
 
   // Cleanup on mount/unmount
   useEffect(() => {
