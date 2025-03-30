@@ -4,9 +4,9 @@ import { Doctor } from '@/types';
 import { UseMapboxProps } from './types';
 import { useMapInitialization } from './useMapInitialization';
 import { useMapMarkers } from './useMapMarkers';
-import { safelyRemoveMap, clearGlobalMapInstance } from './utils';
+import { safelyRemoveMap, clearGlobalMapInstance, markCleanupInProgress, markCleanupComplete } from './utils';
 
-export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {}) => {
+export const useMapbox = ({ onMapInitialized, onMapError, componentId = 'unknown' }: UseMapboxProps & { componentId?: string } = {}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const mountedRef = useRef(true);
@@ -21,7 +21,7 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
     initMap,
     reinitializeMap
   } = useMapInitialization(mapRef, map, setMap, (mapInstance) => {
-    console.log("Map initialized callback triggered with map instance:", mapInstance);
+    console.log(`[${componentId}] Map initialized callback triggered with map instance:`, mapInstance);
     if (onMapInitialized) {
       onMapInitialized(mapInstance);
     }
@@ -35,19 +35,19 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
   
   // Wrapper for updateMarkers to ensure map is passed
   const updateMarkers = (doctors: Doctor[], selectedDoctor: Doctor | null) => {
-    console.log("useMapbox.updateMarkers called, map:", map, "isMapInitialized:", isMapInitialized);
+    console.log(`[${componentId}] useMapbox.updateMarkers called, map:`, map, "isMapInitialized:", isMapInitialized);
     
     if (map && isMapInitialized) {
       updateMarkersInternal(doctors, selectedDoctor);
     } else if (isMapInitialized && !map) {
       // If map should be initialized but map object is missing, schedule retry
       if (!mapUpdateScheduled.current) {
-        console.log("Map should be initialized but map object is missing, scheduling retry");
+        console.log(`[${componentId}] Map should be initialized but map object is missing, scheduling retry`);
         mapUpdateScheduled.current = true;
         
         setTimeout(() => {
           mapUpdateScheduled.current = false;
-          console.log("Retrying marker update after delay, map now:", map);
+          console.log(`[${componentId}] Retrying marker update after delay, map now:`, map);
           if (map && mountedRef.current) {
             updateMarkersInternal(doctors, selectedDoctor);
           }
@@ -58,31 +58,37 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
   
   // Initialize map on component mount
   useEffect(() => {
-    console.log("useMapbox effect running, initializing map");
+    console.log(`[${componentId}] useMapbox effect running, initializing map`);
     mountedRef.current = true;
     hasBeenCleanedUp.current = false;
     
     // Initialize map with a slight delay to ensure DOM is ready
     const timer = setTimeout(() => {
       if (mountedRef.current && mapRef.current) {
-        console.log("Calling initMap from useMapbox effect");
+        console.log(`[${componentId}] Calling initMap from useMapbox effect`);
         initMap().catch(error => {
-          console.error("Map initialization failed:", error);
+          console.error(`[${componentId}] Map initialization failed:`, error);
         });
       } else {
-        console.log("Component unmounted or mapRef not available, skipping initMap");
+        console.log(`[${componentId}] Component unmounted or mapRef not available, skipping initMap`);
       }
     }, 800); // Increased delay for DOM readiness
     
     // Cleanup function
     return () => {
-      console.log("useMapbox cleanup running");
+      console.log(`[${componentId}] useMapbox cleanup running`);
       clearTimeout(timer);
       mountedRef.current = false;
       
-      // Only perform cleanup once
+      // Only perform cleanup once and if not already in progress
       if (hasBeenCleanedUp.current) {
-        console.log("Map already cleaned up, skipping");
+        console.log(`[${componentId}] Map already cleaned up, skipping`);
+        return;
+      }
+      
+      // Mark cleanup as in progress to prevent duplicate cleanups
+      if (!markCleanupInProgress()) {
+        console.log(`[${componentId}] Cleanup already in progress in another instance, skipping`);
         return;
       }
       
@@ -94,20 +100,22 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
         
         // Then remove the map and clear the global reference
         if (map) {
-          console.log("Removing map during cleanup");
+          console.log(`[${componentId}] Removing map during cleanup`);
           safelyRemoveMap(map);
           clearGlobalMapInstance();
         }
       } catch (error) {
-        console.log("General error during cleanup:", error);
+        console.log(`[${componentId}] General error during cleanup:`, error);
+      } finally {
+        markCleanupComplete();
       }
     };
-  }, [initMap, map, cleanupMarkers]);
+  }, [initMap, map, cleanupMarkers, componentId]);
 
   // Effect to sync the map instance when it changes
   useEffect(() => {
-    console.log("Map instance changed:", map);
-  }, [map]);
+    console.log(`[${componentId}] Map instance changed:`, map);
+  }, [map, componentId]);
 
   return { 
     mapRef, 

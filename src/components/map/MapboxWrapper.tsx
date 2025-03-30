@@ -6,6 +6,7 @@ import MapError from './MapError';
 import MapStyles from './MapStyles';
 import { useMapbox } from '@/hooks/mapbox/useMapbox';
 import { toast } from '@/components/ui/use-toast';
+import { isCleanupInProgress } from '@/hooks/mapbox/utils';
 
 interface MapboxWrapperProps {
   doctors: Doctor[];
@@ -24,6 +25,12 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   const markersUpdatedRef = useRef(false);
   const initialMarkersSet = useRef(false);
   const errorRetryCount = useRef(0);
+  const componentId = useRef(`mapbox-${Date.now()}`);
+  
+  console.log(`[${componentId.current}] MapboxWrapper rendering`);
+
+  // Track if we've already cleaned up
+  const hasCleanedUp = useRef(false);
   
   // Initialize Mapbox with callbacks
   const { 
@@ -36,7 +43,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   } = useMapbox({
     onMapInitialized: (mapInstance) => {
       if (isMounted.current) {
-        console.log("Map initialized callback in MapboxWrapper with map");
+        console.log(`[${componentId.current}] Map initialized callback in MapboxWrapper with map`);
         setIsLoading(false);
         errorRetryCount.current = 0;
         
@@ -54,7 +61,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     onMapError: (error) => {
       if (isMounted.current) {
         setIsLoading(false);
-        console.error("Map initialization error:", error);
+        console.error(`[${componentId.current}] Map initialization error:`, error);
         
         // Auto-retry up to 3 times
         if (errorRetryCount.current < 3) {
@@ -83,13 +90,14 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
           });
         }
       }
-    }
+    },
+    componentId: componentId.current
   });
   
   // Update markers when map is initialized with a delay
   useEffect(() => {
     if (isMapInitialized && map && !initialMarkersSet.current && doctors.length > 0) {
-      console.log("Initial map markers setup");
+      console.log(`[${componentId.current}] Initial map markers setup`);
       
       // Mark that we've scheduled the initial update
       initialMarkersSet.current = true;
@@ -97,15 +105,15 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       // Add markers after a delay to ensure map is fully ready
       const timer = setTimeout(() => {
         if (isMounted.current && map) {
-          console.log("Executing initial marker update");
+          console.log(`[${componentId.current}] Executing initial marker update`);
           markersUpdatedRef.current = true;
           try {
             updateMarkers(doctors, selectedDoctor);
           } catch (error) {
-            console.error("Error in initial marker update:", error);
+            console.error(`[${componentId.current}] Error in initial marker update:`, error);
           }
         }
-      }, 800); // Increased delay for initial markers
+      }, 1000); // Increased delay for initial markers
       
       return () => clearTimeout(timer);
     }
@@ -125,7 +133,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     }
     
     if (isMapInitialized && map && doctors.length > 0 && isMounted.current) {
-      console.log("Scheduling marker update for doctor/selection change", { 
+      console.log(`[${componentId.current}] Scheduling marker update for doctor/selection change`, { 
         initialized: isMapInitialized, 
         doctorsCount: doctors.length,
         selectedDoctor: selectedDoctor?.id,
@@ -135,18 +143,18 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       // Add delay to ensure map is ready
       updateMarkersTimeoutRef.current = setTimeout(() => {
         if (isMounted.current && map) {
-          console.log("Executing scheduled marker update");
+          console.log(`[${componentId.current}] Executing scheduled marker update`);
           try {
             updateMarkers(doctors, selectedDoctor);
           } catch (error) {
-            console.error("Error updating markers:", error);
+            console.error(`[${componentId.current}] Error updating markers:`, error);
           }
         } else {
-          console.log("Component unmounted or map not available, skipping marker update");
+          console.log(`[${componentId.current}] Component unmounted or map not available, skipping marker update`);
         }
       }, 500);
     } else {
-      console.log("Not updating markers due to conditions not met", { 
+      console.log(`[${componentId.current}] Not updating markers due to conditions not met`, { 
         initialized: isMapInitialized, 
         doctorsCount: doctors.length,
         isMounted: isMounted.current,
@@ -164,13 +172,22 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
 
   // Cleanup on mount/unmount
   useEffect(() => {
-    console.log("MapboxWrapper mounted");
+    console.log(`[${componentId.current}] MapboxWrapper mounted`);
     isMounted.current = true;
     errorRetryCount.current = 0;
+    hasCleanedUp.current = false;
     
     return () => {
-      console.log("MapboxWrapper unmounting");
+      // Skip cleanup if it's already in progress or completed
+      if (hasCleanedUp.current || isCleanupInProgress()) {
+        console.log(`[${componentId.current}] Cleanup already done or in progress, skipping`);
+        return;
+      }
+      
+      console.log(`[${componentId.current}] MapboxWrapper unmounting - ACTUAL UNMOUNT`);
+      hasCleanedUp.current = true;
       isMounted.current = false;
+      
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);
         updateMarkersTimeoutRef.current = null;
@@ -188,6 +205,9 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       reinitializeMap();
     }
   };
+
+  // Only re-render when really needed
+  console.log(`[${componentId.current}] MapboxWrapper rendering complete`);
 
   return (
     <div className="h-full relative">

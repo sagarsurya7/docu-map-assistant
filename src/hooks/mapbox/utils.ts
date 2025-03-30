@@ -100,8 +100,9 @@ export const safelyRemoveMap = (mapInstance: any) => {
 
 // Add persistent map reference to prevent GC
 let mapInstanceRef: any = null;
+let isCleanupInProgress = false;
 
-// Function to set global map reference (prevents premature GC)
+// Function to set global map instance reference (prevents premature GC)
 export const setGlobalMapInstance = (mapInstance: any) => {
   mapInstanceRef = mapInstance;
   console.log("Set global map instance reference");
@@ -111,4 +112,26 @@ export const setGlobalMapInstance = (mapInstance: any) => {
 export const clearGlobalMapInstance = () => {
   mapInstanceRef = null;
   console.log("Cleared global map instance reference");
+};
+
+// Function to mark cleanup as in progress (prevents duplicate cleanup)
+export const markCleanupInProgress = () => {
+  if (isCleanupInProgress) {
+    console.log("Cleanup already in progress, skipping");
+    return false;
+  }
+  isCleanupInProgress = true;
+  console.log("Marked cleanup in progress");
+  return true;
+};
+
+// Function to mark cleanup as complete
+export const markCleanupComplete = () => {
+  isCleanupInProgress = false;
+  console.log("Marked cleanup complete");
+};
+
+// Function to check if cleanup is in progress
+export const isCleanupInProgress = () => {
+  return isCleanupInProgress;
 };
