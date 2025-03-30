@@ -98,22 +98,27 @@ export const safelyRemoveMap = (mapInstance: any) => {
   }
 };
 
-// Global state management
+// Add persistent map reference to prevent GC
 let mapInstanceRef: any = null;
+// Renamed from isCleanupInProgress to cleanupInProgressFlag to avoid naming conflict
 let cleanupInProgressFlag = false;
-let mapInitializedFlag = false;
+
+// Function to reset all global map state
+export const resetMapState = () => {
+  cleanupInProgressFlag = false;
+  mapInstanceRef = null;
+  console.log("Reset all map state flags");
+};
 
 // Function to set global map instance reference (prevents premature GC)
 export const setGlobalMapInstance = (mapInstance: any) => {
   mapInstanceRef = mapInstance;
-  mapInitializedFlag = true;
   console.log("Set global map instance reference");
 };
 
 // Function to clear global map reference (during intentional cleanup)
 export const clearGlobalMapInstance = () => {
   mapInstanceRef = null;
-  mapInitializedFlag = false;
   console.log("Cleared global map instance reference");
 };
 
@@ -137,17 +142,4 @@ export const markCleanupComplete = () => {
 // Function to check if cleanup is in progress
 export const isCleanupInProgress = () => {
   return cleanupInProgressFlag;
-};
-
-// Function to check if map is initialized
-export const isMapInitialized = () => {
-  return mapInitializedFlag;
-};
-
-// Function to reset map state
-export const resetMapState = () => {
-  console.log("Resetting map state flags");
-  cleanupInProgressFlag = false;
-  mapInitializedFlag = false;
-  mapInstanceRef = null;
 };
