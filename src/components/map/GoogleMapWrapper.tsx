@@ -1,9 +1,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
 import { Doctor } from '@/types';
 import DoctorInfoCard from './DoctorInfoCard';
 import { updateMapMarkers } from '@/utils/mapHelpers';
+import { mapLoader } from '@/utils/mapLoader';
 
 interface GoogleMapWrapperProps {
   doctors: Doctor[];
@@ -23,17 +23,9 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
   
   // Initialize the map
   useEffect(() => {
-    const RADAR_API_KEY = "prj_live_pk_c2520a5ff9a2e8caa3843a2bdbf40c2a7ba06ede";
+    console.log("Using singleton Radar API key for map integration");
     
-    console.log("Using Radar API key for map integration");
-    
-    const loader = new Loader({
-      apiKey: RADAR_API_KEY,
-      version: "weekly",
-      libraries: ["places"]
-    });
-
-    loader
+    mapLoader
       .load()
       .then(() => {
         if (mapRef.current) {
