@@ -29,6 +29,7 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
     
     console.log("In a real application, you would replace 'YOUR_RADAR_API_KEY' with an actual Radar API key.");
     
+    // Intentionally use an invalid key to demonstrate the fallback UI
     const loader = new Loader({
       apiKey: RADAR_API_KEY,
       version: "weekly",
@@ -80,12 +81,13 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
         setMapError(true);
       });
       
+    // Force error state faster for demo purposes
     timeoutId = window.setTimeout(() => {
-      if (!map && !mapError) {
+      if (!map) {
         console.warn("Map failed to load within timeout period, likely due to invalid API key");
         setMapError(true);
       }
-    }, 5000);
+    }, 3000);
       
     return () => {
       window.clearTimeout(timeoutId);
@@ -121,6 +123,9 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
 
   const handleRetry = () => {
     setMapError(false);
+    // In a real app, you might want to reload the map here
+    // For demo purposes, let's set mapError back to true after a delay
+    setTimeout(() => setMapError(true), 1500);
   };
 
   if (mapError) {
