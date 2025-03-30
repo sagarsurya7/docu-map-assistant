@@ -20,7 +20,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   selectedDoctor, 
   onSelectDoctor 
 }) => {
-  const mountedRef = useRef(true);
+  const mountRef = useRef(true);
   const [tokenProvided, setTokenProvided] = useState(!!getMapboxToken());
   const updateMarkersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -33,7 +33,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     reinitializeMap 
   } = useMapbox({
     onMapInitialized: () => {
-      if (mountedRef.current) {
+      if (mountRef.current) {
         toast({
           title: "Map Initialized",
           description: "The map has been successfully loaded.",
@@ -49,7 +49,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     
     // Delay reinitializing map to ensure DOM is ready
     const timer = setTimeout(() => {
-      if (mountedRef.current) {
+      if (mountRef.current) {
         reinitializeMap();
       }
     }, 300);
@@ -65,10 +65,10 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       updateMarkersTimeoutRef.current = null;
     }
     
-    if (isMapInitialized && doctors.length > 0 && mountedRef.current) {
+    if (isMapInitialized && doctors.length > 0 && mountRef.current) {
       // Add delay to ensure the map is fully ready
       updateMarkersTimeoutRef.current = setTimeout(() => {
-        if (mountedRef.current) {
+        if (mountRef.current) {
           updateMarkers(doctors, selectedDoctor);
           updateMarkersTimeoutRef.current = null;
         }
@@ -85,10 +85,13 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
 
   // Cleanup on unmount
   useEffect(() => {
+    mountRef.current = true;
+    
     return () => {
-      mountedRef.current = false;
+      mountRef.current = false;
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);
+        updateMarkersTimeoutRef.current = null;
       }
     };
   }, []);
@@ -105,12 +108,12 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         <MapError 
           message={mapError} 
           onRetry={() => {
-            if (mountedRef.current) {
+            if (mountRef.current) {
               reinitializeMap();
             }
           }}
           onChangeToken={() => {
-            if (mountedRef.current) {
+            if (mountRef.current) {
               setTokenProvided(false);
             }
           }}

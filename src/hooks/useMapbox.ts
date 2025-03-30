@@ -25,10 +25,16 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
   
   // Helper function to safely check if map is valid and can be operated on
   const isMapValid = useCallback((mapInstance: any) => {
-    return mapInstance && 
-           !mapInstance._removed && 
-           mapInstance.getContainer && 
-           isElementInDOM(mapInstance.getContainer());
+    try {
+      return mapInstance && 
+             !mapInstance._removed && 
+             mapInstance.getContainer && 
+             typeof mapInstance.getContainer === 'function' &&
+             isElementInDOM(mapInstance.getContainer());
+    } catch (e) {
+      console.log("Error checking map validity:", e);
+      return false;
+    }
   }, [isElementInDOM]);
   
   // Function to safely cleanup markers
@@ -57,6 +63,39 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     });
     setPopups([]);
   }, [markers, popups]);
+  
+  // Function to safely remove map
+  const safelyRemoveMap = useCallback((mapInstance: any) => {
+    if (!mapInstance) return;
+    
+    try {
+      // First check if map is valid before trying to remove it
+      if (isMapValid(mapInstance)) {
+        // Try to remove event listeners first to avoid removeEventListener errors
+        try {
+          const container = mapInstance.getContainer();
+          if (container) {
+            // Clone events array to avoid modification during iteration
+            const events = [...mapInstance._events || []];
+            events.forEach(event => {
+              try {
+                mapInstance.off(event.type, event.listener);
+              } catch (e) {
+                console.log(`Error removing event ${event.type}:`, e);
+              }
+            });
+          }
+        } catch (e) {
+          console.log("Error removing map event listeners:", e);
+        }
+        
+        // Now safely remove the map
+        mapInstance.remove();
+      }
+    } catch (error) {
+      console.log("Error during map cleanup:", error);
+    }
+  }, [isMapValid]);
   
   // Function to initialize the map
   const initMap = useCallback(async () => {
@@ -97,11 +136,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
               try {
                 // Clean up previous map instance if it exists
                 if (map) {
-                  try {
-                    map.remove();
-                  } catch (error) {
-                    console.log("Error removing old map instance:", error);
-                  }
+                  safelyRemoveMap(map);
                 }
                 
                 // Check if mapRef is still valid before creating map
@@ -123,11 +158,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
                 // Set up load handler
                 mapInstance.once('load', () => {
                   if (!mountedRef.current) {
-                    try {
-                      mapInstance.remove();
-                    } catch (e) {
-                      console.log("Error removing map after unmount:", e);
-                    }
+                    safelyRemoveMap(mapInstance);
                     initPromiseRef.current = null;
                     return reject("Component unmounted during map load");
                   }
@@ -207,7 +238,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
       initPromiseRef.current = null;
       throw error;
     }
-  }, [map, onMapInitialized, isElementInDOM]);
+  }, [map, onMapInitialized, isElementInDOM, safelyRemoveMap]);
   
   // Function to reinitialize the map (useful when token changes)
   const reinitializeMap = useCallback(() => {
@@ -222,11 +253,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     
     // Remove existing map
     if (map) {
-      try {
-        map.remove();
-      } catch (error) {
-        console.log("Error removing map:", error);
-      }
+      safelyRemoveMap(map);
       setMap(null);
     }
     
@@ -241,7 +268,7 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [initMap, map, cleanupMarkers]);
+  }, [initMap, map, cleanupMarkers, safelyRemoveMap]);
   
   // Initialize map on component mount
   useEffect(() => {
@@ -270,17 +297,13 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
         
         // Then remove the map
         if (map) {
-          try {
-            map.remove();
-          } catch (error) {
-            console.log("Error during map cleanup:", error);
-          }
+          safelyRemoveMap(map);
         }
       } catch (error) {
         console.log("General error during cleanup:", error);
       }
     };
-  }, [initMap, map, cleanupMarkers]);
+  }, [initMap, map, cleanupMarkers, safelyRemoveMap]);
 
   // Function to update markers
   const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
@@ -351,8 +374,10 @@ export const useMapbox = ({ onMapInitialized }: UseMapboxProps = {}) => {
               
             // Only add to map if map is still valid
             try {
-              marker.addTo(map);
-              newMarkers.push(marker);
+              if (isMapValid(map)) {
+                marker.addTo(map);
+                newMarkers.push(marker);
+              }
             } catch (e) {
               console.log("Error adding marker to map:", e);
             }

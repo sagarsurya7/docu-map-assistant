@@ -33,6 +33,16 @@ export const getMapboxToken = () => MAPBOX_ACCESS_TOKEN;
 let isLoadingMapbox = false;
 let mapboxLoadPromise: Promise<any> | null = null;
 
+// Helper function to check if Mapbox script is already in the document
+const isMapboxScriptPresent = () => {
+  return !!document.getElementById('mapbox-gl-script');
+};
+
+// Helper function to check if Mapbox CSS is already in the document
+const isMapboxCssPresent = () => {
+  return !!document.getElementById('mapbox-gl-css');
+};
+
 export const initializeMapbox = () => {
   // Return existing promise if already loading
   if (isLoadingMapbox && mapboxLoadPromise) {
@@ -59,7 +69,7 @@ export const initializeMapbox = () => {
       }
       
       // Check for existing script to avoid duplicates
-      if (!document.getElementById('mapbox-gl-script')) {
+      if (!isMapboxScriptPresent()) {
         console.log("Loading Mapbox GL JS");
         
         // Get the document head - guard against missing head
@@ -72,22 +82,24 @@ export const initializeMapbox = () => {
           return;
         }
         
+        // Add Mapbox CSS if not already present
+        if (!isMapboxCssPresent()) {
+          const mapboxCss = document.createElement('link');
+          mapboxCss.id = 'mapbox-gl-css';
+          mapboxCss.rel = 'stylesheet';
+          mapboxCss.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+          mapboxCss.crossOrigin = 'anonymous';
+          
+          // Append CSS to head
+          head.appendChild(mapboxCss);
+        }
+        
         // Create and load Mapbox GL JS script
         const mapboxScript = document.createElement('script');
         mapboxScript.id = 'mapbox-gl-script';
         mapboxScript.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
         mapboxScript.async = true;
         mapboxScript.crossOrigin = 'anonymous';
-        
-        // Add Mapbox CSS
-        const mapboxCss = document.createElement('link');
-        mapboxCss.id = 'mapbox-gl-css';
-        mapboxCss.rel = 'stylesheet';
-        mapboxCss.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-        mapboxCss.crossOrigin = 'anonymous';
-        
-        // Append CSS to head
-        head.appendChild(mapboxCss);
         
         // Handle script load
         mapboxScript.onload = () => {
