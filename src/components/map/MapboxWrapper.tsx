@@ -22,8 +22,9 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
 }) => {
   const mountedRef = useRef(true);
   const [tokenProvided, setTokenProvided] = useState(!!getMapboxToken());
+  const updateMarkersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Initialize Mapbox
+  // Initialize Mapbox with delayed callbacks
   const { 
     mapRef, 
     isMapInitialized, 
@@ -46,32 +47,49 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     setMapboxToken(token);
     setTokenProvided(true);
     
-    // Short delay to ensure DOM is ready
-    setTimeout(() => {
+    // Delay reinitializing map to ensure DOM is ready
+    const timer = setTimeout(() => {
       if (mountedRef.current) {
         reinitializeMap();
       }
-    }, 200);
+    }, 300);
+    
+    return () => clearTimeout(timer);
   };
   
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
+    // Clear any existing timeout to prevent race conditions
+    if (updateMarkersTimeoutRef.current) {
+      clearTimeout(updateMarkersTimeoutRef.current);
+      updateMarkersTimeoutRef.current = null;
+    }
+    
     if (isMapInitialized && doctors.length > 0 && mountedRef.current) {
-      // Add small delay to ensure the map is fully ready
-      const timer = setTimeout(() => {
+      // Add delay to ensure the map is fully ready
+      updateMarkersTimeoutRef.current = setTimeout(() => {
         if (mountedRef.current) {
           updateMarkers(doctors, selectedDoctor);
+          updateMarkersTimeoutRef.current = null;
         }
-      }, 300);
-      
-      return () => clearTimeout(timer);
+      }, 500);
     }
+    
+    return () => {
+      if (updateMarkersTimeoutRef.current) {
+        clearTimeout(updateMarkersTimeoutRef.current);
+        updateMarkersTimeoutRef.current = null;
+      }
+    };
   }, [isMapInitialized, doctors, selectedDoctor, updateMarkers]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
+      if (updateMarkersTimeoutRef.current) {
+        clearTimeout(updateMarkersTimeoutRef.current);
+      }
     };
   }, []);
 

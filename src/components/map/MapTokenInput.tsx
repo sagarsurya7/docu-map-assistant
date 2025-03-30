@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface MapTokenInputProps {
   onSubmit: (token: string) => void;
@@ -14,8 +15,18 @@ const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const mountedRef = useRef(true);
   
-  // Cleanup on unmount
+  // Check if token exists in localStorage on mount
   useEffect(() => {
+    try {
+      const savedToken = localStorage.getItem('mapbox-token');
+      if (savedToken) {
+        setToken(savedToken);
+      }
+    } catch (error) {
+      console.error("Error reading token from localStorage:", error);
+    }
+    
+    // Cleanup on unmount
     return () => {
       mountedRef.current = false;
     };
@@ -34,14 +45,30 @@ const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
         // Call the onSubmit prop with the token
         onSubmit(token.trim());
         
+        // Show success toast
+        toast({
+          title: "Mapbox token applied",
+          description: "Your map token has been saved for this session."
+        });
+        
         // Reset submitting state after a delay
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           if (mountedRef.current) {
             setIsSubmitting(false);
           }
         }, 1000);
+        
+        return () => clearTimeout(timer);
       } catch (error) {
         console.error("Error submitting token:", error);
+        
+        // Show error toast
+        toast({
+          title: "Error saving token",
+          description: "There was a problem saving your Mapbox token.",
+          variant: "destructive"
+        });
+        
         if (mountedRef.current) {
           setIsSubmitting(false);
         }
