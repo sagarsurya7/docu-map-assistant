@@ -20,12 +20,12 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   selectedDoctor, 
   onSelectDoctor 
 }) => {
-  const mountRef = useRef(true);
+  const isMounted = useRef(true);
   const [tokenProvided, setTokenProvided] = useState(!!getMapboxToken());
   const [isLoading, setIsLoading] = useState(true);
   const updateMarkersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Initialize Mapbox with delayed callbacks
+  // Initialize Mapbox with callbacks
   const { 
     mapRef, 
     isMapInitialized, 
@@ -34,7 +34,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     reinitializeMap 
   } = useMapbox({
     onMapInitialized: () => {
-      if (mountRef.current) {
+      if (isMounted.current) {
         setIsLoading(false);
         toast({
           title: "Map Initialized",
@@ -43,7 +43,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       }
     },
     onMapError: (error) => {
-      if (mountRef.current) {
+      if (isMounted.current) {
         setIsLoading(false);
         console.error("Map initialization error:", error);
       }
@@ -56,34 +56,30 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     setTokenProvided(true);
     setIsLoading(true);
     
-    // Delay reinitializing map to ensure DOM is ready
-    const timer = setTimeout(() => {
-      if (mountRef.current) {
+    // Short delay before reinitializing
+    setTimeout(() => {
+      if (isMounted.current) {
         reinitializeMap();
       }
     }, 300);
-    
-    return () => clearTimeout(timer);
   };
   
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
-    // Clear any existing timeout to prevent race conditions
+    // Clear any existing timeout
     if (updateMarkersTimeoutRef.current) {
       clearTimeout(updateMarkersTimeoutRef.current);
-      updateMarkersTimeoutRef.current = null;
     }
     
-    if (isMapInitialized && doctors.length > 0 && mountRef.current) {
-      // Add delay to ensure the map is fully ready
+    if (isMapInitialized && doctors.length > 0 && isMounted.current) {
+      // Add delay to ensure map is ready
       updateMarkersTimeoutRef.current = setTimeout(() => {
-        if (mountRef.current) {
+        if (isMounted.current && mapRef.current) {
           try {
             updateMarkers(doctors, selectedDoctor);
           } catch (error) {
             console.error("Error updating markers:", error);
           }
-          updateMarkersTimeoutRef.current = null;
         }
       }, 500);
     }
@@ -91,20 +87,18 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     return () => {
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);
-        updateMarkersTimeoutRef.current = null;
       }
     };
-  }, [isMapInitialized, doctors, selectedDoctor, updateMarkers]);
+  }, [isMapInitialized, doctors, selectedDoctor, updateMarkers, mapRef]);
 
-  // Cleanup on unmount
+  // Cleanup on mount/unmount
   useEffect(() => {
-    mountRef.current = true;
+    isMounted.current = true;
     
     return () => {
-      mountRef.current = false;
+      isMounted.current = false;
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);
-        updateMarkersTimeoutRef.current = null;
       }
     };
   }, []);
@@ -121,13 +115,13 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         <MapError 
           message={mapError} 
           onRetry={() => {
-            if (mountRef.current) {
+            if (isMounted.current) {
               setIsLoading(true);
               reinitializeMap();
             }
           }}
           onChangeToken={() => {
-            if (mountRef.current) {
+            if (isMounted.current) {
               setTokenProvided(false);
             }
           }}

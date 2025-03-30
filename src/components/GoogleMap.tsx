@@ -16,11 +16,13 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   onSelectDoctor 
 }) => {
   const [mapError, setMapError] = useState<string | null>(null);
+  const [isMapLoading, setIsMapLoading] = useState(true);
 
   // Handle map errors at this level
   const handleMapError = (error: Error) => {
     console.error("Map error:", error);
     setMapError(error.message || "Unable to load map");
+    setIsMapLoading(false);
   };
 
   if (mapError) {
@@ -29,7 +31,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         <div className="text-center max-w-md p-4">
           <div className="text-red-500 mb-4">{mapError}</div>
           <button 
-            onClick={() => setMapError(null)} 
+            onClick={() => {
+              setMapError(null);
+              setIsMapLoading(true);
+            }} 
             className="px-4 py-2 bg-medical text-white rounded-md hover:bg-medical-dark"
           >
             Retry Loading Map

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
 import { CopilotKit } from '@copilotkit/react-core';
@@ -26,6 +26,13 @@ const Index = () => {
   
   const toggleChatBot = () => setShowChatBot(!showChatBot);
   const toggleDoctorsList = () => setShowDoctorsList(!showDoctorsList);
+  
+  // Reset mobile view to list when switching between mobile and desktop
+  useEffect(() => {
+    if (isMobile) {
+      setMobileView('list');
+    }
+  }, [isMobile]);
   
   return (
     <CopilotKit publicApiKey={COPILOT_API_KEY}>

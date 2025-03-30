@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Bot } from 'lucide-react';
@@ -11,6 +11,14 @@ import { initialMessages, generateResponse } from '@/utils/chatUtils';
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [isTyping, setIsTyping] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const handleSendMessage = (input: string) => {
     // Add user message
@@ -23,16 +31,20 @@ const ChatBot: React.FC = () => {
     setIsTyping(true);
     
     // Simulate AI response after a delay
-    setTimeout(() => {
-      const response = generateResponse(input.toLowerCase());
-      
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response
-      }]);
-      
-      setIsTyping(false);
+    const timer = setTimeout(() => {
+      if (isMounted.current) {
+        const response = generateResponse(input.toLowerCase());
+        
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: response
+        }]);
+        
+        setIsTyping(false);
+      }
     }, 1500);
+    
+    return () => clearTimeout(timer);
   };
 
   return (
