@@ -7,7 +7,7 @@ try {
   const storedToken = localStorage.getItem('mapbox-token');
   if (storedToken) {
     MAPBOX_ACCESS_TOKEN = storedToken;
-    console.log("Loaded Mapbox token from localStorage");
+    console.log("Loaded Mapbox token from localStorage:", storedToken.substring(0, 10) + "...");
   }
 } catch (e) {
   console.error("Error accessing localStorage:", e);
@@ -17,10 +17,12 @@ export const setMapboxToken = (token: string) => {
   try {
     MAPBOX_ACCESS_TOKEN = token;
     localStorage.setItem('mapbox-token', token);
+    console.log("Set Mapbox token:", token.substring(0, 10) + "...");
     
     // Update token for any existing mapboxgl instance
     if (window.mapboxgl) {
       window.mapboxgl.accessToken = token;
+      console.log("Updated token for existing mapboxgl instance");
     }
   } catch (e) {
     console.error("Error setting mapbox token:", e);
@@ -58,6 +60,7 @@ export const initializeMapbox = () => {
         console.log("Mapbox already loaded, setting token");
         if (MAPBOX_ACCESS_TOKEN) {
           window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+          console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
           isLoadingMapbox = false;
           resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
         } else {
@@ -92,6 +95,7 @@ export const initializeMapbox = () => {
           
           // Append CSS to head
           head.appendChild(mapboxCss);
+          console.log("Added Mapbox CSS to head");
         }
         
         // Create and load Mapbox GL JS script
@@ -111,6 +115,7 @@ export const initializeMapbox = () => {
               console.log("Mapbox GL JS loaded successfully");
               if (MAPBOX_ACCESS_TOKEN) {
                 window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+                console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
                 isLoadingMapbox = false;
                 resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
               } else {
@@ -138,6 +143,7 @@ export const initializeMapbox = () => {
         
         // Append script to head
         head.appendChild(mapboxScript);
+        console.log("Added Mapbox script to head");
       } else {
         // Script tag exists but mapboxgl object might not be ready yet
         console.log("Mapbox script tag already exists, checking for object");
@@ -152,6 +158,7 @@ export const initializeMapbox = () => {
             clearInterval(checkMapboxInterval);
             if (MAPBOX_ACCESS_TOKEN) {
               window.mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+              console.log("Set mapboxgl.accessToken =", MAPBOX_ACCESS_TOKEN.substring(0, 10) + "...");
               isLoadingMapbox = false;
               resolve({ accessToken: MAPBOX_ACCESS_TOKEN });
             } else {

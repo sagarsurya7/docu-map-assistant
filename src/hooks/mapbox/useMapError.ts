@@ -12,7 +12,7 @@ export const useMapError = (onMapError?: (error: Error) => void) => {
     console.error("Map error:", errorMessage);
     setMapError(errorMessage);
     
-    if (onMapError) {
+    if (onMapError && error) {
       onMapError(typeof error === 'string' ? new Error(error) : error);
     }
   }, [onMapError]);

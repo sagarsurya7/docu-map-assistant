@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 interface MapTokenInputProps {
@@ -36,6 +36,15 @@ const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
     e.preventDefault();
     
     if (token.trim()) {
+      if (!token.startsWith('pk.')) {
+        toast({
+          title: "Invalid Token Format",
+          description: "Mapbox public tokens typically start with 'pk.'",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       setIsSubmitting(true);
       
       try {
@@ -89,7 +98,7 @@ const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
         <div>
           <h3 className="text-lg font-medium mb-2">Enter your Mapbox Access Token</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            You can get your public token from your Mapbox account at{' '}
+            You need to get a <strong>public</strong> token from your Mapbox account at{' '}
             <a 
               href="https://account.mapbox.com/" 
               target="_blank" 
@@ -99,6 +108,19 @@ const MapTokenInput: React.FC<MapTokenInputProps> = ({ onSubmit }) => {
               account.mapbox.com
             </a>
           </p>
+          
+          <div className="bg-blue-50 p-3 rounded-md mb-4 flex gap-2">
+            <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-700">
+              <p className="font-semibold">How to get a Mapbox token:</p>
+              <ol className="list-decimal ml-5 mt-1 space-y-1">
+                <li>Create a free account at <a href="https://account.mapbox.com/auth/signup/" target="_blank" rel="noopener noreferrer" className="underline">Mapbox</a></li>
+                <li>Go to your Account dashboard</li>
+                <li>Find "Access Tokens" section</li>
+                <li>Copy your default public token (starts with pk.)</li>
+              </ol>
+            </div>
+          </div>
         </div>
         
         <Input

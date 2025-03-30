@@ -36,6 +36,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     onMapInitialized: () => {
       if (isMounted.current) {
         setIsLoading(false);
+        console.log("Map initialized successfully!");
         toast({
           title: "Map Initialized",
           description: "The map has been successfully loaded.",
@@ -46,12 +47,28 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       if (isMounted.current) {
         setIsLoading(false);
         console.error("Map initialization error:", error);
+        
+        // Show error toast to make the error visible to the user
+        toast({
+          title: "Map Error",
+          description: error.message || "Failed to initialize map",
+          variant: "destructive"
+        });
       }
     }
   });
   
   // Handle token submission
   const handleTokenSubmit = (token: string) => {
+    if (!token || token.trim().length < 20) {
+      toast({
+        title: "Invalid Token",
+        description: "Please enter a valid Mapbox token",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setMapboxToken(token);
     setTokenProvided(true);
     setIsLoading(true);
@@ -59,6 +76,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     // Short delay before reinitializing
     setTimeout(() => {
       if (isMounted.current) {
+        console.log("Reinitializing map with new token:", token.substring(0, 10) + "...");
         reinitializeMap();
       }
     }, 300);

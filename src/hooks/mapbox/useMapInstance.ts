@@ -20,6 +20,12 @@ export const useMapInstance = (map: any) => {
     }
     
     try {
+      // Make sure the token is set
+      if (!mapboxgl.accessToken) {
+        console.error("No Mapbox access token set");
+        return Promise.reject("No Mapbox access token provided");
+      }
+
       // Center on Pune, India
       const puneCoordinates = { lng: 73.8567, lat: 18.5204 };
       
@@ -29,8 +35,12 @@ export const useMapInstance = (map: any) => {
         style: 'mapbox://styles/mapbox/light-v11',
         center: puneCoordinates,
         zoom: 12,
-        failIfMajorPerformanceCaveat: true
+        failIfMajorPerformanceCaveat: true,
+        attributionControl: false
       });
+      
+      // Add debugging
+      console.log("Map instance created:", mapInstance);
       
       return new Promise<any>((resolve, reject) => {
         // Set up load handler
@@ -40,7 +50,7 @@ export const useMapInstance = (map: any) => {
             return reject("Component unmounted during map load");
           }
           
-          console.log("Map loaded");
+          console.log("Map loaded successfully!");
           
           // Add navigation controls only after map is loaded
           try {
@@ -55,7 +65,7 @@ export const useMapInstance = (map: any) => {
         // Handle map errors
         mapInstance.on('error', (e: any) => {
           if (!mountedRef.current) return;
-          console.error("Mapbox error:", e);
+          console.error("Mapbox error event triggered:", e);
           
           reject(e.error?.message || 'Unknown map error');
         });
