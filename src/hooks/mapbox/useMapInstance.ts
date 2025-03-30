@@ -11,6 +11,12 @@ export const useMapInstance = (map: any) => {
     return new Promise<any>((resolve, reject) => {
       console.log("Creating map instance, checking DOM readiness");
       
+      // Check if component is still mounted
+      if (!mountedRef.current) {
+        console.log("Component unmounted before map creation");
+        return reject("Component unmounted before map creation");
+      }
+      
       // Check if mapRef is still valid before creating map
       if (!mapRef.current || !isElementInDOM(mapRef.current)) {
         console.log("Map container is no longer in DOM");
@@ -34,6 +40,11 @@ export const useMapInstance = (map: any) => {
         // Center on Pune, India
         const puneCoordinates = { lng: 73.8567, lat: 18.5204 };
         
+        // Double check DOM before creating map
+        if (!mapRef.current || !isElementInDOM(mapRef.current)) {
+          return reject("Map container is not in the DOM during initialization");
+        }
+        
         // Create map instance
         const mapInstance = new mapboxgl.Map({
           container: mapRef.current,
@@ -41,47 +52,63 @@ export const useMapInstance = (map: any) => {
           center: puneCoordinates,
           zoom: 12,
           failIfMajorPerformanceCaveat: true,
-          attributionControl: false
+          attributionControl: false,
+          preserveDrawingBuffer: true, // Helps with some rendering issues
         });
         
         // Add debugging
-        console.log("Map instance created successfully:", mapInstance);
+        console.log("Map instance created successfully");
         
-        // Set up load handler
-        mapInstance.once('load', () => {
-          if (!mountedRef.current) {
-            console.log("Component unmounted during map load, cleaning up");
-            safelyRemoveMap(mapInstance);
-            return reject("Component unmounted during map load");
-          }
+        // Set up load handler with retry mechanism
+        let loadAttempts = 0;
+        const maxLoadAttempts = 3;
+        
+        const setupLoadHandler = () => {
+          loadAttempts++;
+          console.log(`Setting up map load handler, attempt ${loadAttempts}`);
           
-          console.log("Map loaded successfully!");
-          
-          // Add navigation controls only after map is loaded
-          try {
-            mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
-          } catch (error) {
-            console.log("Error adding navigation control:", error);
-          }
-          
-          // Wait a brief moment for the map to stabilize
-          setTimeout(() => {
-            if (mountedRef.current) {
-              console.log("Map is fully stabilized, resolving promise");
-              resolve(mapInstance);
-            } else {
+          mapInstance.once('load', () => {
+            if (!mountedRef.current) {
+              console.log("Component unmounted during map load, cleaning up");
               safelyRemoveMap(mapInstance);
-              reject("Component unmounted during map stabilization");
+              return reject("Component unmounted during map load");
             }
-          }, 100);
-        });
+            
+            console.log("Map loaded successfully!");
+            
+            // Add navigation controls only after map is loaded
+            try {
+              mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            } catch (error) {
+              console.log("Error adding navigation control:", error);
+            }
+            
+            // Wait a brief moment for the map to stabilize
+            setTimeout(() => {
+              if (mountedRef.current) {
+                console.log("Map is fully stabilized, resolving promise");
+                resolve(mapInstance);
+              } else {
+                safelyRemoveMap(mapInstance);
+                reject("Component unmounted during map stabilization");
+              }
+            }, 250); // Increased stability delay
+          });
+        };
+        
+        setupLoadHandler();
         
         // Handle map errors
         mapInstance.on('error', (e: any) => {
           if (!mountedRef.current) return;
           console.error("Mapbox error event triggered:", e);
           
-          reject(e.error?.message || 'Unknown map error');
+          if (loadAttempts < maxLoadAttempts) {
+            console.log(`Retrying map load after error, attempt ${loadAttempts + 1}`);
+            setupLoadHandler();
+          } else {
+            reject(e.error?.message || 'Unknown map error');
+          }
         });
       } catch (error) {
         console.error("Error creating map instance:", error);

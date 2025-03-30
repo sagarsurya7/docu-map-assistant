@@ -29,10 +29,15 @@ export const isMapValid = (mapInstance: any) => {
       return false;
     }
 
-    // Check if container is in DOM
-    const container = mapInstance.getContainer();
-    if (!isElementInDOM(container)) {
-      console.log("Map container is not in DOM");
+    // Check if container is in DOM - the key validation
+    try {
+      const container = mapInstance.getContainer();
+      if (!isElementInDOM(container)) {
+        console.log("Map container is not in DOM");
+        return false;
+      }
+    } catch (e) {
+      console.log("Error getting map container:", e);
       return false;
     }
 
@@ -62,7 +67,7 @@ export const safelyRemoveMap = (mapInstance: any) => {
   }
   
   try {
-    console.log("Attempting to remove map", mapInstance);
+    console.log("Attempting to remove map");
     
     // First check if map is valid before trying to remove it
     if (isMapValid(mapInstance)) {
@@ -70,18 +75,14 @@ export const safelyRemoveMap = (mapInstance: any) => {
       
       // Try to remove event listeners first to avoid removeEventListener errors
       try {
-        const container = mapInstance.getContainer();
-        if (container) {
-          // Clone events array to avoid modification during iteration
-          const events = [...mapInstance._events || []];
-          events.forEach(event => {
-            try {
-              mapInstance.off(event.type, event.listener);
-            } catch (e) {
-              console.log(`Error removing event ${event.type}:`, e);
-            }
-          });
-        }
+        const events = [...(mapInstance._events || [])];
+        events.forEach(event => {
+          try {
+            mapInstance.off(event.type, event.listener);
+          } catch (e) {
+            console.log(`Error removing event ${event.type}:`, e);
+          }
+        });
       } catch (e) {
         console.log("Error removing map event listeners:", e);
       }
@@ -90,19 +91,7 @@ export const safelyRemoveMap = (mapInstance: any) => {
       mapInstance.remove();
       console.log("Map removed successfully");
     } else {
-      console.log("Map isn't valid, attempting alternative cleanup");
-      
-      // If map isn't valid, it may still have a _container property we can clean up
-      if (mapInstance._container && isElementInDOM(mapInstance._container)) {
-        try {
-          mapInstance.remove();
-          console.log("Map removed via fallback method");
-        } catch (e) {
-          console.log("Error removing invalid map:", e);
-        }
-      } else {
-        console.log("Map container not in DOM, no need to remove");
-      }
+      console.log("Map isn't valid, skipping removal");
     }
   } catch (error) {
     console.log("Error during map cleanup:", error);
