@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { safelyRemoveMap, isElementInDOM } from './utils';
+import { safelyRemoveMap, isElementInDOM, setGlobalMapInstance } from './utils';
 
 export const useMapInstance = (map: any) => {
   const createMapInstance = useCallback((
@@ -55,6 +55,9 @@ export const useMapInstance = (map: any) => {
           attributionControl: false,
           preserveDrawingBuffer: true, // Helps with some rendering issues
         });
+        
+        // Store global reference to prevent GC
+        setGlobalMapInstance(mapInstance);
         
         // Add debugging
         console.log("Map instance created successfully");

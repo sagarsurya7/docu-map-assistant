@@ -23,6 +23,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   const updateMarkersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const markersUpdatedRef = useRef(false);
   const initialMarkersSet = useRef(false);
+  const errorRetryCount = useRef(0);
   
   // Initialize Mapbox with callbacks
   const { 
@@ -37,6 +38,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       if (isMounted.current) {
         console.log("Map initialized callback in MapboxWrapper with map");
         setIsLoading(false);
+        errorRetryCount.current = 0;
         
         // Set a flag to update markers once the map is fully initialized
         markersUpdatedRef.current = false;
@@ -54,12 +56,32 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         setIsLoading(false);
         console.error("Map initialization error:", error);
         
-        // Show error toast
-        toast({
-          title: "Map Error",
-          description: error.message || "Failed to initialize map",
-          variant: "destructive"
-        });
+        // Auto-retry up to 3 times
+        if (errorRetryCount.current < 3) {
+          errorRetryCount.current++;
+          
+          // Show retry toast
+          toast({
+            title: "Map Error",
+            description: `Retrying map initialization (attempt ${errorRetryCount.current})...`,
+            variant: "destructive"
+          });
+          
+          // Wait before retrying
+          setTimeout(() => {
+            if (isMounted.current) {
+              setIsLoading(true);
+              reinitializeMap();
+            }
+          }, 3000);
+        } else {
+          // Show error toast after all retries failed
+          toast({
+            title: "Map Error",
+            description: error.message || "Failed to initialize map after multiple attempts",
+            variant: "destructive"
+          });
+        }
       }
     }
   });
@@ -83,7 +105,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
             console.error("Error in initial marker update:", error);
           }
         }
-      }, 500); // Increased delay for initial markers
+      }, 800); // Increased delay for initial markers
       
       return () => clearTimeout(timer);
     }
@@ -122,7 +144,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         } else {
           console.log("Component unmounted or map not available, skipping marker update");
         }
-      }, 300);
+      }, 500);
     } else {
       console.log("Not updating markers due to conditions not met", { 
         initialized: isMapInitialized, 
@@ -144,6 +166,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   useEffect(() => {
     console.log("MapboxWrapper mounted");
     isMounted.current = true;
+    errorRetryCount.current = 0;
     
     return () => {
       console.log("MapboxWrapper unmounting");
@@ -155,20 +178,24 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     };
   }, []);
 
+  // If there's an error and we've exceeded retry attempts, provide a manual retry option
+  const handleManualRetry = () => {
+    if (isMounted.current) {
+      setIsLoading(true);
+      markersUpdatedRef.current = false;
+      initialMarkersSet.current = false;
+      errorRetryCount.current = 0;
+      reinitializeMap();
+    }
+  };
+
   return (
     <div className="h-full relative">
       <MapStyles />
       {mapError ? (
         <MapError 
           message={mapError} 
-          onRetry={() => {
-            if (isMounted.current) {
-              setIsLoading(true);
-              markersUpdatedRef.current = false;
-              initialMarkersSet.current = false;
-              reinitializeMap();
-            }
-          }}
+          onRetry={handleManualRetry}
         />
       ) : (
         <>

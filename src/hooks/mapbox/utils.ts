@@ -18,7 +18,7 @@ export const isMapValid = (mapInstance: any) => {
     }
 
     // Check if the map has been removed
-    if (mapInstance._removed) {
+    if (mapInstance._removed === true) {
       console.log("Map has been removed (_removed flag is true)");
       return false;
     }
@@ -96,4 +96,19 @@ export const safelyRemoveMap = (mapInstance: any) => {
   } catch (error) {
     console.log("Error during map cleanup:", error);
   }
+};
+
+// Add persistent map reference to prevent GC
+let mapInstanceRef: any = null;
+
+// Function to set global map reference (prevents premature GC)
+export const setGlobalMapInstance = (mapInstance: any) => {
+  mapInstanceRef = mapInstance;
+  console.log("Set global map instance reference");
+};
+
+// Function to clear global map reference (during intentional cleanup)
+export const clearGlobalMapInstance = () => {
+  mapInstanceRef = null;
+  console.log("Cleared global map instance reference");
 };

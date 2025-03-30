@@ -4,13 +4,14 @@ import { Doctor } from '@/types';
 import { UseMapboxProps } from './types';
 import { useMapInitialization } from './useMapInitialization';
 import { useMapMarkers } from './useMapMarkers';
-import { safelyRemoveMap } from './utils';
+import { safelyRemoveMap, clearGlobalMapInstance } from './utils';
 
 export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const mountedRef = useRef(true);
   const mapUpdateScheduled = useRef(false);
+  const hasBeenCleanedUp = useRef(false);
   
   // Use the map initialization hook
   const {
@@ -59,6 +60,7 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
   useEffect(() => {
     console.log("useMapbox effect running, initializing map");
     mountedRef.current = true;
+    hasBeenCleanedUp.current = false;
     
     // Initialize map with a slight delay to ensure DOM is ready
     const timer = setTimeout(() => {
@@ -70,7 +72,7 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
       } else {
         console.log("Component unmounted or mapRef not available, skipping initMap");
       }
-    }, 500); // Increased delay for DOM readiness
+    }, 800); // Increased delay for DOM readiness
     
     // Cleanup function
     return () => {
@@ -78,14 +80,23 @@ export const useMapbox = ({ onMapInitialized, onMapError }: UseMapboxProps = {})
       clearTimeout(timer);
       mountedRef.current = false;
       
+      // Only perform cleanup once
+      if (hasBeenCleanedUp.current) {
+        console.log("Map already cleaned up, skipping");
+        return;
+      }
+      
       try {
+        hasBeenCleanedUp.current = true;
+        
         // Clean up markers and popups first
         cleanupMarkers();
         
-        // Then remove the map
+        // Then remove the map and clear the global reference
         if (map) {
           console.log("Removing map during cleanup");
           safelyRemoveMap(map);
+          clearGlobalMapInstance();
         }
       } catch (error) {
         console.log("General error during cleanup:", error);
