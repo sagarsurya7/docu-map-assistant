@@ -17,7 +17,6 @@ const DoctorListFallback: React.FC<DoctorListFallbackProps> = ({
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-      <h4 className="font-medium text-lg mb-3">Radar Doctor Locations</h4>
       <div className="space-y-3 max-h-[60vh] overflow-y-auto">
         {doctors.map((doctor) => (
           <div 
