@@ -46,11 +46,15 @@ const ChatBot: React.FC = () => {
         </div>
       </CardHeader>
 
-      <ChatMessageList messages={messages} isTyping={isTyping} />
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto">
+          <ChatMessageList messages={messages} isTyping={isTyping} />
+        </div>
 
-      <CardFooter className="pt-0 px-4 pb-4 sticky bottom-0 bg-white">
-        <ChatInput onSendMessage={handleSendMessage} />
-      </CardFooter>
+        <CardFooter className="pt-3 px-4 pb-4 sticky bottom-0 bg-white border-t mt-auto">
+          <ChatInput onSendMessage={handleSendMessage} />
+        </CardFooter>
+      </div>
     </Card>
   );
 };

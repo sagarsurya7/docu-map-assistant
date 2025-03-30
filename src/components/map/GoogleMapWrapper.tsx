@@ -2,8 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Doctor } from '@/types';
 import DoctorInfoCard from './DoctorInfoCard';
-import { updateMapMarkers } from '@/utils/mapHelpers';
-import { mapLoader } from '@/utils/mapLoader';
+import { initializeRadarMap } from '@/utils/mapLoader';
 
 interface GoogleMapWrapperProps {
   doctors: Doctor[];
@@ -17,112 +16,178 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
   onSelectDoctor 
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
-  const [infoWindows, setInfoWindows] = useState<google.maps.InfoWindow[]>([]);
+  const [map, setMap] = useState<any>(null);
+  const [markers, setMarkers] = useState<any[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
   
-  // Initialize the map
+  // Initialize the Radar map
   useEffect(() => {
-    console.log("Initializing Google Maps with valid API key");
+    console.log("Initializing Radar Maps");
     
     if (!mapRef.current) return;
     
-    mapLoader
-      .load()
-      .then((google) => {
-        if (mapRef.current) {
-          try {
+    const initMap = () => {
+      try {
+        initializeRadarMap();
+        
+        // Wait for Radar Maps to load
+        const checkRadarMaps = setInterval(() => {
+          if (window.radar && window.radar.maps) {
+            clearInterval(checkRadarMaps);
+            
             // Center on Pune, India
             const puneCoordinates = { lat: 18.5204, lng: 73.8567 };
             
-            const mapInstance = new google.maps.Map(mapRef.current, {
+            const mapInstance = new window.radar.maps.Map({
+              element: mapRef.current,
               center: puneCoordinates,
               zoom: 13,
-              mapTypeControl: false,
-              fullscreenControl: false,
-              streetViewControl: false,
-              zoomControl: true,
-              zoomControlOptions: {
-                position: google.maps.ControlPosition.RIGHT_TOP,
-              },
-              styles: [
-                {
-                  featureType: "poi.business",
-                  elementType: "labels",
-                  stylers: [{ visibility: "off" }],
-                },
-                {
-                  featureType: "transit",
-                  elementType: "labels.icon",
-                  stylers: [{ visibility: "off" }],
-                },
-              ],
+              baseMap: 'light'
             });
             
             setMap(mapInstance);
             setMapError(null);
             
-            // After map loads, pan to the selected doctor if one is already selected
+            // After map loads, add markers and pan to the selected doctor if one is already selected
+            addMarkersToMap(mapInstance, doctors, selectedDoctor);
+            
             if (selectedDoctor) {
-              mapInstance.panTo(selectedDoctor.location);
+              mapInstance.setCenter(selectedDoctor.location);
               mapInstance.setZoom(15);
             }
             
-            console.log("Map initialized successfully");
-          } catch (error) {
-            console.error("Error initializing map:", error);
-            setMapError("Failed to initialize the map. Please try refreshing the page.");
+            console.log("Radar Map initialized successfully");
           }
-        }
-      })
-      .catch(e => {
-        console.error("Error loading Google Maps API:", e);
-        setMapError("Failed to load the map. Please check your internet connection and try again.");
-      });
-      
-    return () => {
-      if (markers.length > 0) {
-        markers.forEach(marker => marker.setMap(null));
-        setMarkers([]);
+        }, 500);
+        
+        // Set a timeout to handle case where Radar Maps fails to load
+        setTimeout(() => {
+          clearInterval(checkRadarMaps);
+          if (!window.radar || !window.radar.maps) {
+            setMapError("Failed to load Radar Maps. Please refresh the page.");
+          }
+        }, 10000);
+        
+      } catch (error) {
+        console.error("Error initializing Radar map:", error);
+        setMapError("Failed to initialize the map. Please try refreshing the page.");
       }
-      
-      if (infoWindows.length > 0) {
-        infoWindows.forEach(infoWindow => infoWindow.close());
-        setInfoWindows([]);
+    };
+    
+    initMap();
+    
+    return () => {
+      // Clean up markers when component unmounts
+      if (markers.length > 0) {
+        markers.forEach(marker => {
+          if (marker && marker.remove) {
+            marker.remove();
+          }
+        });
+        setMarkers([]);
       }
     };
   }, []);
 
   // Update markers when doctors or selected doctor changes
   useEffect(() => {
-    if (!map || !window.google || doctors.length === 0) return;
+    if (!map || !window.radar || !window.radar.maps || doctors.length === 0) return;
     
     try {
-      const { newMarkers, newInfoWindows } = updateMapMarkers(
-        map,
-        doctors,
-        selectedDoctor,
-        onSelectDoctor,
-        markers,
-        infoWindows
-      );
+      addMarkersToMap(map, doctors, selectedDoctor);
       
-      setMarkers(newMarkers);
-      setInfoWindows(newInfoWindows);
-
       // Center the map on the selected doctor's location if one is selected
       if (selectedDoctor) {
-        map.panTo(selectedDoctor.location);
+        map.setCenter(selectedDoctor.location);
         map.setZoom(15); // Zoom in a bit to show the area better
       }
     } catch (error) {
       console.error("Error updating map markers:", error);
     }
   }, [map, doctors, selectedDoctor]);
+  
+  // Function to add markers to the map
+  const addMarkersToMap = (mapInstance: any, doctors: Doctor[], selectedDoc: Doctor | null) => {
+    // Clear existing markers
+    markers.forEach(marker => {
+      if (marker && marker.remove) {
+        marker.remove();
+      }
+    });
+    
+    const newMarkers: any[] = [];
+    
+    doctors.forEach(doctor => {
+      try {
+        const isSelected = selectedDoc?.id === doctor.id;
+        
+        // Create marker with Radar Maps
+        const marker = new window.radar.maps.Marker({
+          map: mapInstance,
+          position: doctor.location,
+          icon: {
+            url: isSelected 
+              ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' 
+              : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            size: [40, 40],
+          },
+          // Radar Maps doesn't support direct animation, but we can add a class for CSS animation
+          className: isSelected ? 'selected-marker' : ''
+        });
+        
+        // Add click event to marker
+        marker.on('click', () => {
+          onSelectDoctor(doctor);
+        });
+        
+        // Create popup (infoWindow equivalent in Radar Maps)
+        const popupContent = `
+          <div class="p-2">
+            <div class="font-semibold">${doctor.name}</div>
+            <div class="text-sm">${doctor.specialty}</div>
+            <div class="text-xs mt-1">${doctor.address}</div>
+          </div>
+        `;
+        
+        const popup = new window.radar.maps.Popup({
+          content: popupContent,
+          position: doctor.location,
+          closeButton: true,
+        });
+        
+        // Show popup for selected doctor
+        if (isSelected) {
+          popup.addTo(mapInstance);
+        }
+        
+        // Show popup on click
+        marker.on('click', () => {
+          popup.addTo(mapInstance);
+        });
+        
+        newMarkers.push(marker);
+      } catch (error) {
+        console.error("Error creating marker for doctor:", doctor.name, error);
+      }
+    });
+    
+    setMarkers(newMarkers);
+  };
 
   return (
     <div className="h-full relative">
+      <style>
+        {`
+          .selected-marker {
+            animation: bounce 1s infinite alternate;
+          }
+          
+          @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+          }
+        `}
+      </style>
       {mapError ? (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
           <div className="text-center p-4">
@@ -147,5 +212,13 @@ const GoogleMapWrapper: React.FC<GoogleMapWrapperProps> = ({
     </div>
   );
 };
+
+// Add the Radar types to the window object
+declare global {
+  interface Window {
+    radar: any;
+    Radar: any;
+  }
+}
 
 export default GoogleMapWrapper;

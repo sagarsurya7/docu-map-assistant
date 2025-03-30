@@ -38,7 +38,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
           type="button"
           size="icon"
           variant="ghost"
-          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground sm:flex hidden"
+          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hidden sm:flex"
         >
           <Paperclip className="h-4 w-4" />
         </Button>
@@ -46,7 +46,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
           type="button"
           size="icon"
           variant="ghost"
-          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground sm:flex hidden"
+          className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hidden sm:flex"
         >
           <MicIcon className="h-4 w-4" />
         </Button>
