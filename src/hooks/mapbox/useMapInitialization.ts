@@ -26,28 +26,43 @@ export const useMapInitialization = (
   
   // Function to initialize the map
   const initMap = useCallback(async () => {
-    if (!mapRef.current || mapInitialized.current || !mountedRef.current) return;
+    if (!mapRef.current || mapInitialized.current || !mountedRef.current) {
+      console.log("Skipping map initialization", {
+        mapRefExists: !!mapRef.current,
+        alreadyInitialized: mapInitialized.current,
+        mounted: mountedRef.current
+      });
+      return null;
+    }
     
     try {
-      console.log("Starting map initialization");
+      console.log("Starting map initialization process");
       
       // Load Mapbox library first
       await loadMapboxWithTimeout(mountedRef);
       
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        console.log("Component unmounted during Mapbox loading");
+        return null;
+      }
+      
+      console.log("Mapbox library loaded, creating map instance");
       
       // Create map instance
       const mapInstance = await createMapInstance(window.mapboxgl, mapRef, mountedRef);
       
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        console.log("Component unmounted before map instance could be used");
+        return null;
+      }
+      
+      console.log("Map instance created successfully, updating state", mapInstance);
       
       // Update state
       setMap(mapInstance);
       setIsMapInitialized(true);
       setMapError(null);
       mapInitialized.current = true;
-      
-      console.log("Map initialized successfully", mapInstance);
       
       // Notify parent component
       if (onMapInitialized) {
@@ -56,7 +71,10 @@ export const useMapInitialization = (
       
       return mapInstance;
     } catch (error) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        console.log("Component unmounted during error handling");
+        return null;
+      }
       
       console.error("Map initialization failed:", error);
       
@@ -65,7 +83,7 @@ export const useMapInitialization = (
         : "Failed to initialize the map. Please ensure your Mapbox token is valid.";
       
       handleMapError(errorMessage);
-      throw error;
+      return null;
     }
   }, [
     mapRef, 
@@ -79,8 +97,12 @@ export const useMapInitialization = (
 
   // Function to reinitialize the map (useful when token changes)
   const reinitializeMap = useCallback(() => {
-    if (!mountedRef.current) return;
+    if (!mountedRef.current) {
+      console.log("Not reinitializing map, component unmounted");
+      return;
+    }
     
+    console.log("Reinitializing map");
     setIsMapInitialized(false);
     setMapError(null);
     mapInitialized.current = false;
@@ -88,9 +110,12 @@ export const useMapInitialization = (
     // Initialize new map after a short delay
     const timer = setTimeout(() => {
       if (mountedRef.current) {
-        initMap();
+        console.log("Calling initMap from reinitializeMap");
+        initMap().catch(error => {
+          console.error("Map reinitialization failed:", error);
+        });
       }
-    }, 100);
+    }, 200);
     
     return () => clearTimeout(timer);
   }, [initMap, setMapError]);

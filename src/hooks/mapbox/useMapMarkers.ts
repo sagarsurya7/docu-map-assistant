@@ -11,10 +11,14 @@ export const useMapMarkers = (
   const [markers, setMarkers] = useState<any[]>([]);
   const [popups, setPopups] = useState<any[]>([]);
   const updateInProgress = useRef(false);
+  const lastDoctorsRef = useRef<Doctor[]>([]);
+  const lastSelectedDoctorRef = useRef<Doctor | null>(null);
   
   // Function to safely cleanup markers
   const cleanupMarkers = useCallback(() => {
     if (!mountedRef.current) return;
+    
+    console.log(`Cleaning up ${markers.length} markers and ${popups.length} popups`);
     
     markers.forEach(marker => {
       if (marker) {
@@ -41,27 +45,46 @@ export const useMapMarkers = (
   
   // Function to update markers
   const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
+    // Store the current doctors and selected doctor for retry logic
+    lastDoctorsRef.current = doctors;
+    lastSelectedDoctorRef.current = selectedDoctor;
+    
     // Prevent concurrent updates which may cause issues
     if (updateInProgress.current) {
       console.log("Marker update already in progress, skipping");
       return;
     }
     
-    console.log("updateMarkers called with map:", map);
+    console.log("updateMarkers called with map:", map, "isMapInitialized:", isMapInitialized);
     
-    if (!map || !isMapInitialized || !window.mapboxgl || !mountedRef.current) {
+    if (!map || !isMapInitialized || !window.mapboxgl) {
       console.log("Cannot update markers, map not ready", {
         mapExists: !!map,
         isMapInitialized,
         mapboxGlExists: !!window.mapboxgl,
         componentMounted: mountedRef.current
       });
+      
+      if (isMapInitialized && !map && window.mapboxgl && mountedRef.current) {
+        console.log("Map should be initialized but map object is missing, scheduling retry");
+        setTimeout(() => {
+          if (mountedRef.current) {
+            console.log("Retrying marker update");
+            updateMarkers(doctors, selectedDoctor);
+          }
+        }, 1000);
+      }
+      return;
+    }
+    
+    if (!mountedRef.current) {
+      console.log("Component not mounted, skipping marker update");
       return;
     }
     
     // Check if map is valid before proceeding
     if (!isMapValid(map)) {
-      console.log("Map container no longer in DOM or map is invalid, cannot update markers");
+      console.log("Map is invalid, cannot update markers");
       return;
     }
     
