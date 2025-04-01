@@ -19,6 +19,12 @@ export const useMapboxWrapper = (
   const errorRetryCount = useRef(0);
   const hasCleanedUp = useRef(false);
   const [mapStabilized, setMapStabilized] = useState(false);
+  const onCriticalErrorRef = useRef(onCriticalError);
+  
+  // Update ref when onCriticalError changes to avoid dependency issues
+  useEffect(() => {
+    onCriticalErrorRef.current = onCriticalError;
+  }, [onCriticalError]);
   
   // Memoize the callbacks passed to useMapbox to prevent unnecessary reinitializations
   const handleMapInitialized = useCallback((mapInstance: any) => {
@@ -84,13 +90,13 @@ export const useMapboxWrapper = (
           variant: "destructive"
         });
         
-        // Notify parent of critical error
-        if (onCriticalError) {
-          onCriticalError(error.message || "Failed to initialize map");
+        // Notify parent of critical error via ref to avoid dependency issues
+        if (onCriticalErrorRef.current) {
+          onCriticalErrorRef.current(error.message || "Failed to initialize map");
         }
       }
     }
-  }, [onCriticalError, componentId]);
+  }, [componentId]);
   
   // Initialize Mapbox with memoized callbacks
   const { 
