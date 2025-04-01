@@ -31,7 +31,7 @@ export const useMarkerUpdater = (
       return;
     }
     
-    console.log("updateMarkers called with map:", map, "isMapInitialized:", isMapInitialized);
+    console.log("updateMarkers called with map:", !!map, "isMapInitialized:", isMapInitialized);
     
     if (!map || !isMapInitialized || !window.mapboxgl) {
       console.log("Cannot update markers, map not ready", {
@@ -40,16 +40,6 @@ export const useMarkerUpdater = (
         mapboxGlExists: !!window.mapboxgl,
         componentMounted: mountedRef.current
       });
-      
-      if (isMapInitialized && !map && window.mapboxgl && mountedRef.current) {
-        console.log("Map should be initialized but map object is missing, scheduling retry");
-        setTimeout(() => {
-          if (mountedRef.current) {
-            console.log("Retrying marker update");
-            updateMarkers(doctors, selectedDoctor);
-          }
-        }, 1000);
-      }
       return;
     }
     

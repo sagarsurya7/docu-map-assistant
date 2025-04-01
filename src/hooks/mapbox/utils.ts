@@ -41,17 +41,6 @@ export const isMapValid = (mapInstance: any) => {
       return false;
     }
 
-    // Additional check to verify map is fully initialized
-    try {
-      if (typeof mapInstance.loaded === 'function' && !mapInstance.loaded()) {
-        console.log("Map is not fully loaded yet");
-        return false;
-      }
-    } catch (e) {
-      console.log("Error checking if map is loaded:", e);
-      return false;
-    }
-
     return true;
   } catch (e) {
     console.log("Error checking map validity:", e);
@@ -98,9 +87,9 @@ export const safelyRemoveMap = (mapInstance: any) => {
   }
 };
 
-// Add persistent map reference to prevent GC
+// Add persistent map reference to prevent garbage collection
 let mapInstanceRef: any = null;
-// Renamed from isCleanupInProgress to cleanupInProgressFlag to avoid naming conflict
+// Cleanup in progress flag
 let cleanupInProgressFlag = false;
 
 // Function to reset all global map state

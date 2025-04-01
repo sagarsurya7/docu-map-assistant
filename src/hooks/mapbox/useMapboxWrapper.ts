@@ -91,16 +91,18 @@ export const useMapboxWrapper = (
     componentId
   });
   
-  // Update markers when map is initialized with a delay
+  // Update markers when map is initialized with a delay - ALWAYS called, never conditional
   useEffect(() => {
-    if (isMapInitialized && map && !initialMarkersSet.current && doctors.length > 0) {
+    let timer: NodeJS.Timeout | null = null;
+    
+    if (isMapInitialized && map && doctors.length > 0 && !initialMarkersSet.current) {
       console.log(`[${componentId}] Initial map markers setup`);
       
       // Mark that we've scheduled the initial update
       initialMarkersSet.current = true;
       
       // Add markers after a delay to ensure map is fully ready
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         if (isMounted.current && map) {
           console.log(`[${componentId}] Executing initial marker update`);
           markersUpdatedRef.current = true;
@@ -111,9 +113,11 @@ export const useMapboxWrapper = (
           }
         }
       }, 1000); // Increased delay for initial markers
-      
-      return () => clearTimeout(timer);
     }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers, componentId]);
   
   // Use useCallback for marker updates to stabilize the effect dependency
@@ -172,7 +176,7 @@ export const useMapboxWrapper = (
     };
   }, [updateMarkersWithDebounce]);
 
-  // Cleanup on mount/unmount
+  // This effect is ALWAYS called regardless of any conditions - prevents hooks from changing between renders
   useEffect(() => {
     console.log(`[${componentId}] MapboxWrapper mounted`);
     // Reset global state on mount to ensure clean initialization
@@ -182,12 +186,6 @@ export const useMapboxWrapper = (
     hasCleanedUp.current = false;
     
     return () => {
-      // Skip cleanup if it's already in progress or completed
-      if (hasCleanedUp.current || isCleanupInProgress()) {
-        console.log(`[${componentId}] Cleanup already done or in progress, skipping`);
-        return;
-      }
-      
       console.log(`[${componentId}] MapboxWrapper unmounting - ACTUAL UNMOUNT`);
       hasCleanedUp.current = true;
       isMounted.current = false;
@@ -195,6 +193,11 @@ export const useMapboxWrapper = (
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);
         updateMarkersTimeoutRef.current = null;
+      }
+      
+      // Skip cleanup if it's already in progress or completed
+      if (isCleanupInProgress()) {
+        console.log(`[${componentId}] Cleanup already in progress, skipping`);
       }
     };
   }, [componentId]);
