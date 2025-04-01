@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, memo } from 'react';
 import { Doctor } from '@/types';
 import DoctorInfoCard from './DoctorInfoCard';
 import MapError from './MapError';
@@ -12,12 +12,14 @@ interface MapboxWrapperProps {
   doctors: Doctor[];
   selectedDoctor: Doctor | null;
   onSelectDoctor: (doctor: Doctor) => void;
+  onCriticalError?: (error: string) => void;
 }
 
 const MapboxWrapper: React.FC<MapboxWrapperProps> = ({ 
   doctors, 
   selectedDoctor, 
-  onSelectDoctor 
+  onSelectDoctor,
+  onCriticalError 
 }) => {
   const isMounted = useRef(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +34,65 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   // Track if we've already cleaned up
   const hasCleanedUp = useRef(false);
   
-  // Initialize Mapbox with callbacks
+  // Memoize the callbacks passed to useMapbox to prevent unnecessary reinitializations
+  const handleMapInitialized = useCallback((mapInstance: any) => {
+    if (isMounted.current) {
+      console.log(`[${componentId.current}] Map initialized callback in MapboxWrapper with map`);
+      setIsLoading(false);
+      errorRetryCount.current = 0;
+      
+      // Set a flag to update markers once the map is fully initialized
+      markersUpdatedRef.current = false;
+      initialMarkersSet.current = false;
+      
+      // Show success toast
+      toast({
+        title: "Map Initialized",
+        description: "The map has been successfully loaded.",
+      });
+    }
+  }, []);
+  
+  const handleMapError = useCallback((error: Error) => {
+    if (isMounted.current) {
+      setIsLoading(false);
+      console.error(`[${componentId.current}] Map initialization error:`, error);
+      
+      // Auto-retry up to 3 times
+      if (errorRetryCount.current < 3) {
+        errorRetryCount.current++;
+        
+        // Show retry toast
+        toast({
+          title: "Map Error",
+          description: `Retrying map initialization (attempt ${errorRetryCount.current})...`,
+          variant: "destructive"
+        });
+        
+        // Wait before retrying
+        setTimeout(() => {
+          if (isMounted.current) {
+            setIsLoading(true);
+            reinitializeMap();
+          }
+        }, 3000);
+      } else {
+        // Show error toast after all retries failed
+        toast({
+          title: "Map Error",
+          description: error.message || "Failed to initialize map after multiple attempts",
+          variant: "destructive"
+        });
+        
+        // Notify parent of critical error
+        if (onCriticalError) {
+          onCriticalError(error.message || "Failed to initialize map");
+        }
+      }
+    }
+  }, [onCriticalError]);
+  
+  // Initialize Mapbox with memoized callbacks
   const { 
     mapRef, 
     map,
@@ -41,60 +101,12 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     updateMarkers, 
     reinitializeMap 
   } = useMapbox({
-    onMapInitialized: (mapInstance) => {
-      if (isMounted.current) {
-        console.log(`[${componentId.current}] Map initialized callback in MapboxWrapper with map`);
-        setIsLoading(false);
-        errorRetryCount.current = 0;
-        
-        // Set a flag to update markers once the map is fully initialized
-        markersUpdatedRef.current = false;
-        initialMarkersSet.current = false;
-        
-        // Show success toast
-        toast({
-          title: "Map Initialized",
-          description: "The map has been successfully loaded.",
-        });
-      }
-    },
-    onMapError: (error) => {
-      if (isMounted.current) {
-        setIsLoading(false);
-        console.error(`[${componentId.current}] Map initialization error:`, error);
-        
-        // Auto-retry up to 3 times
-        if (errorRetryCount.current < 3) {
-          errorRetryCount.current++;
-          
-          // Show retry toast
-          toast({
-            title: "Map Error",
-            description: `Retrying map initialization (attempt ${errorRetryCount.current})...`,
-            variant: "destructive"
-          });
-          
-          // Wait before retrying
-          setTimeout(() => {
-            if (isMounted.current) {
-              setIsLoading(true);
-              reinitializeMap();
-            }
-          }, 3000);
-        } else {
-          // Show error toast after all retries failed
-          toast({
-            title: "Map Error",
-            description: error.message || "Failed to initialize map after multiple attempts",
-            variant: "destructive"
-          });
-        }
-      }
-    },
+    onMapInitialized: handleMapInitialized,
+    onMapError: handleMapError,
     componentId: componentId.current
   });
   
-  // Update markers when map is initialized with a delay
+  // Update markers when map is initialized with a delay - use useCallback to stabilize
   useEffect(() => {
     if (isMapInitialized && map && !initialMarkersSet.current && doctors.length > 0) {
       console.log(`[${componentId.current}] Initial map markers setup`);
@@ -119,8 +131,8 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     }
   }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers]);
   
-  // Update markers when doctors or selected doctor changes
-  useEffect(() => {
+  // Use useCallback for marker updates to stabilize the effect dependency
+  const updateMarkersWithDebounce = useCallback(() => {
     // Skip if initial markers haven't been set yet
     if (!markersUpdatedRef.current) {
       return;
@@ -161,6 +173,11 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         mapExists: !!map
       });
     }
+  }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers]);
+  
+  // Update markers when doctors or selected doctor changes - with stabilized callback
+  useEffect(() => {
+    updateMarkersWithDebounce();
     
     return () => {
       if (updateMarkersTimeoutRef.current) {
@@ -168,7 +185,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
         updateMarkersTimeoutRef.current = null;
       }
     };
-  }, [isMapInitialized, doctors, selectedDoctor, updateMarkers, map]);
+  }, [updateMarkersWithDebounce]);
 
   // Cleanup on mount/unmount
   useEffect(() => {
@@ -197,8 +214,8 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     };
   }, []);
 
-  // If there's an error and we've exceeded retry attempts, provide a manual retry option
-  const handleManualRetry = () => {
+  // Memoize handleManualRetry to prevent recreation on each render
+  const handleManualRetry = useCallback(() => {
     if (isMounted.current) {
       setIsLoading(true);
       markersUpdatedRef.current = false;
@@ -207,9 +224,8 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
       resetMapState(); // Add this to ensure we start fresh
       reinitializeMap();
     }
-  };
+  }, [reinitializeMap]);
 
-  // Only re-render when really needed
   console.log(`[${componentId.current}] MapboxWrapper rendering complete`);
 
   return (
@@ -243,4 +259,5 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   );
 };
 
-export default MapboxWrapper;
+// Use React.memo to prevent unnecessary rerenders
+export default memo(MapboxWrapper);
