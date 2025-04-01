@@ -48,7 +48,7 @@ export const isMapValid = (mapInstance: any) => {
   }
 };
 
-// Function to safely remove map
+// Function to safely remove map - simplified to minimize errors
 export const safelyRemoveMap = (mapInstance: any) => {
   if (!mapInstance) {
     console.log("No map instance to remove");
@@ -62,21 +62,8 @@ export const safelyRemoveMap = (mapInstance: any) => {
     if (isMapValid(mapInstance)) {
       console.log("Map is valid, removing it properly");
       
-      // Try to remove event listeners first to avoid removeEventListener errors
-      try {
-        const events = [...(mapInstance._events || [])];
-        events.forEach(event => {
-          try {
-            mapInstance.off(event.type, event.listener);
-          } catch (e) {
-            console.log(`Error removing event ${event.type}:`, e);
-          }
-        });
-      } catch (e) {
-        console.log("Error removing map event listeners:", e);
-      }
-      
-      // Now safely remove the map
+      // Now safely remove the map - but with minimal interventions
+      // to avoid errors with event listeners or DOM manipulation
       mapInstance.remove();
       console.log("Map removed successfully");
     } else {
@@ -87,27 +74,22 @@ export const safelyRemoveMap = (mapInstance: any) => {
   }
 };
 
-// Add persistent map reference to prevent garbage collection
-let mapInstanceRef: any = null;
 // Cleanup in progress flag
 let cleanupInProgressFlag = false;
 
 // Function to reset all global map state
 export const resetMapState = () => {
   cleanupInProgressFlag = false;
-  mapInstanceRef = null;
-  console.log("Reset all map state flags");
+  console.log("Reset map state flags");
 };
 
 // Function to set global map instance reference (prevents premature GC)
 export const setGlobalMapInstance = (mapInstance: any) => {
-  mapInstanceRef = mapInstance;
   console.log("Set global map instance reference");
 };
 
 // Function to clear global map reference (during intentional cleanup)
 export const clearGlobalMapInstance = () => {
-  mapInstanceRef = null;
   console.log("Cleared global map instance reference");
 };
 

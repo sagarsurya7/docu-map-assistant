@@ -4,7 +4,7 @@ import { Doctor } from '@/types';
 import { UseMapboxProps } from './types';
 import { useMapInitialization } from './useMapInitialization';
 import { useMapMarkers } from './useMapMarkers';
-import { safelyRemoveMap, clearGlobalMapInstance, markCleanupInProgress, markCleanupComplete } from './utils';
+import { markCleanupInProgress, markCleanupComplete } from './utils';
 
 export const useMapbox = ({ onMapInitialized, onMapError, componentId = 'unknown' }: UseMapboxProps & { componentId?: string } = {}) => {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -98,19 +98,15 @@ export const useMapbox = ({ onMapInitialized, onMapError, componentId = 'unknown
         // Clean up markers and popups first
         cleanupMarkers();
         
-        // Then remove the map and clear the global reference
-        if (map) {
-          console.log(`[${componentId}] Removing map during cleanup`);
-          safelyRemoveMap(map);
-          clearGlobalMapInstance();
-        }
+        // Removed aggressive map cleanup code to prevent errors
+        // We're letting the browser handle the cleanup more naturally
       } catch (error) {
         console.log(`[${componentId}] General error during cleanup:`, error);
       } finally {
         markCleanupComplete();
       }
     };
-  }, [initMap, map, cleanupMarkers, componentId]);
+  }, [initMap, cleanupMarkers, componentId]);
 
   // Effect to sync the map instance when it changes
   useEffect(() => {

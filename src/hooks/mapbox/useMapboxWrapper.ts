@@ -1,8 +1,9 @@
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Doctor } from '@/types';
 import { useMapbox } from './useMapbox';
 import { toast } from '@/components/ui/use-toast';
-import { isCleanupInProgress, resetMapState } from './utils';
+import { isCleanupInProgress } from './utils';
 
 export const useMapboxWrapper = (
   doctors: Doctor[],
@@ -188,7 +189,6 @@ export const useMapboxWrapper = (
 
   useEffect(() => {
     console.log(`[${componentId}] MapboxWrapper mounted`);
-    resetMapState(); 
     isMounted.current = true;
     errorRetryCount.current = 0;
     hasCleanedUp.current = false;
@@ -206,6 +206,8 @@ export const useMapboxWrapper = (
       if (isCleanupInProgress()) {
         console.log(`[${componentId}] Cleanup already in progress, skipping`);
       }
+      
+      // Removed the resetMapState() call to avoid excessive cleanup
     };
   }, [componentId]);
 
@@ -216,7 +218,6 @@ export const useMapboxWrapper = (
       initialMarkersSet.current = false;
       setMapStabilized(false);
       errorRetryCount.current = 0;
-      resetMapState();
       reinitializeMap();
     }
   }, [reinitializeMap]);

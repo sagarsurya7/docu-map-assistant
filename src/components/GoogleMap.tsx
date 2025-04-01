@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Doctor } from '@/types';
 import MapboxWrapper from './map/MapboxWrapper';
-import { resetMapState } from '@/hooks/mapbox/utils';
 
 interface GoogleMapProps {
   doctors: Doctor[];
@@ -23,20 +22,14 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   // Track if component is mounted
   const isMounted = useRef(true);
   
-  // Reset map state on component mount/unmount
+  // Simplified useEffect with minimal cleanup
   useEffect(() => {
     isMounted.current = true;
     console.log("GoogleMap component mounted");
     
-    // Reset map state on mount to ensure clean state
-    resetMapState();
-    
     return () => {
       console.log("GoogleMap component ACTUAL unmount");
       isMounted.current = false;
-      
-      // Clean up immediately rather than deferring with setTimeout
-      resetMapState();
     };
   }, []);
 
@@ -45,9 +38,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     if (isMounted.current) {
       console.error(`Critical map error: ${error}. Forcing remount.`);
       setMapError(error);
-      
-      // Reset map state and recreate component
-      resetMapState();
       
       // Create new primitive string key (never use Date objects directly)
       setMapKey(Date.now().toString());
