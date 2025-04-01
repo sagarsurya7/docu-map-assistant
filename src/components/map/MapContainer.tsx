@@ -5,6 +5,7 @@ import LoadingIndicator from './LoadingIndicator';
 import MapError from './MapError';
 import DoctorInfoCard from './DoctorInfoCard';
 import { Doctor } from '@/types';
+import { toast } from '@/components/ui/use-toast';
 
 interface MapContainerProps {
   mapRef: React.RefObject<HTMLDivElement>;
@@ -23,6 +24,31 @@ const MapContainer: React.FC<MapContainerProps> = ({
   isMapInitialized,
   onRetry
 }) => {
+  // Show a toast notification when the map is initialized
+  React.useEffect(() => {
+    if (isMapInitialized && !isLoading) {
+      toast({
+        title: "Map Ready",
+        description: "The map is now fully loaded and stable.",
+        duration: 3000,
+      });
+    }
+  }, [isMapInitialized, isLoading]);
+
+  // Use a safe reference to the DOM element
+  const mapContainerRef = React.useCallback((node: HTMLDivElement | null) => {
+    if (node && mapRef.current !== node) {
+      // Only update if the ref has changed
+      if (mapRef.current) {
+        // Clean existing ref data to avoid potential memory/reference issues
+        (mapRef as any).current = null;
+      }
+      
+      // Set the new ref
+      (mapRef as any).current = node;
+    }
+  }, [mapRef]);
+
   return (
     <div className="h-full relative">
       <MapStyles />
@@ -33,7 +59,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         />
       ) : (
         <>
-          <div ref={mapRef} className="h-full w-full mapbox-container"></div>
+          <div ref={mapContainerRef} className="h-full w-full mapbox-container"></div>
           {isLoading && <LoadingIndicator />}
           {!isLoading && isMapInitialized && (
             <div className="absolute top-4 left-4 bg-white/80 px-4 py-2 rounded-md shadow-md text-sm font-medium animate-pulse">
