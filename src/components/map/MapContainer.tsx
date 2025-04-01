@@ -35,12 +35,15 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [isMapInitialized, isLoading]);
 
-  // Use a safe reference to the DOM element - with primitive value handling only
+  // Use a mutable ref for DOM assignment - handling it in a safe, serializable way
   const mapContainerRef = React.useCallback((node: HTMLDivElement | null) => {
-    // Safely set the ref by avoiding circular references
-    if (node !== null) {
-      // Assign directly to current without any additional properties
-      mapRef.current = node;
+    // Using safe object assignment to avoid circular references
+    if (mapRef && typeof mapRef === 'object') {
+      // Safely update the current property
+      Object.defineProperty(mapRef, 'current', {
+        writable: true,
+        value: node
+      });
     }
   }, [mapRef]);
 

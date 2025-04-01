@@ -17,7 +17,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   onSelectDoctor,
   onCriticalError 
 }) => {
-  // Create a stable identifier for this instance
+  // Create a stable identifier for this instance (using primitive string)
   const componentId = useRef(`mapbox-${Date.now().toString()}`).current;
   
   console.log(`[${componentId}] MapboxWrapper rendering`);
