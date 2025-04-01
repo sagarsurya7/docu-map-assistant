@@ -3,7 +3,7 @@ import React from 'react';
 
 const MapStyles: React.FC = () => {
   return (
-    <style jsx global>{`
+    <style>{`
       .mapbox-container {
         width: 100%;
         height: 100%;

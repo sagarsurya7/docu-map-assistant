@@ -22,8 +22,8 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, isTyping })
   };
 
   return (
-    <ScrollArea className="flex-1 p-4">
-      <div className="space-y-4">
+    <div className="h-full px-4 py-4 overflow-y-auto">
+      <div className="space-y-4 pb-2">
         {messages.map((message, index) => (
           <ChatMessage key={index} message={message} />
         ))}
@@ -32,7 +32,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, isTyping })
         
         <div ref={messagesEndRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 };
 
