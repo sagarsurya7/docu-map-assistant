@@ -19,7 +19,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   
   // Use a stable key for the map instead of changing on every error
   // Only change this when we explicitly need to force a remount
-  const [mapKey, setMapKey] = useState(() => Date.now());
+  const [mapKey, setMapKey] = useState(() => Date.now().toString());
   
   // Track if component is mounted
   const isMounted = useRef(true);
@@ -49,7 +49,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       
       // Reset map state and recreate component
       resetMapState();
-      setMapKey(Date.now()); // Use state setter instead of directly modifying ref
+      setMapKey(Date.now().toString()); // Use primitive string instead of Date object
     }
   }, []);
 

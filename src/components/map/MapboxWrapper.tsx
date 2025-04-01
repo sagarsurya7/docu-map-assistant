@@ -17,9 +17,10 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   onSelectDoctor,
   onCriticalError 
 }) => {
-  const componentId = useRef(`mapbox-${Date.now()}`);
+  // Create a stable identifier for this instance
+  const componentId = useRef(`mapbox-${Date.now().toString()}`).current;
   
-  console.log(`[${componentId.current}] MapboxWrapper rendering`);
+  console.log(`[${componentId}] MapboxWrapper rendering`);
 
   // Use the refactored hook for map functionality
   const {
@@ -28,9 +29,9 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     mapError,
     isMapInitialized,
     handleManualRetry
-  } = useMapboxWrapper(doctors, selectedDoctor, onCriticalError, componentId.current);
+  } = useMapboxWrapper(doctors, selectedDoctor, onCriticalError, componentId);
 
-  console.log(`[${componentId.current}] MapboxWrapper rendering complete`);
+  console.log(`[${componentId}] MapboxWrapper rendering complete`);
 
   return (
     <MapContainer

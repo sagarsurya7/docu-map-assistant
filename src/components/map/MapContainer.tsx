@@ -35,17 +35,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [isMapInitialized, isLoading]);
 
-  // Use a safe reference to the DOM element
+  // Use a safe reference to the DOM element - with primitive value handling only
   const mapContainerRef = React.useCallback((node: HTMLDivElement | null) => {
-    if (node && mapRef.current !== node) {
-      // Only update if the ref has changed
-      if (mapRef.current) {
-        // Clean existing ref data to avoid potential memory/reference issues
-        (mapRef as any).current = null;
-      }
-      
-      // Set the new ref
-      (mapRef as any).current = node;
+    // Safely set the ref by avoiding circular references
+    if (node !== null) {
+      // Assign directly to current without any additional properties
+      mapRef.current = node;
     }
   }, [mapRef]);
 
