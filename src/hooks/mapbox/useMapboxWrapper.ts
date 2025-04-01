@@ -18,6 +18,7 @@ export const useMapboxWrapper = (
   const initialMarkersSet = useRef(false);
   const errorRetryCount = useRef(0);
   const hasCleanedUp = useRef(false);
+  const [mapStabilized, setMapStabilized] = useState(false);
   
   // Memoize the callbacks passed to useMapbox to prevent unnecessary reinitializations
   const handleMapInitialized = useCallback((mapInstance: any) => {
@@ -30,10 +31,24 @@ export const useMapboxWrapper = (
       markersUpdatedRef.current = false;
       initialMarkersSet.current = false;
       
-      // Show success toast
+      // Set a timer to mark the map as stabilized after 3 seconds
+      setTimeout(() => {
+        if (isMounted.current) {
+          console.log(`[${componentId}] Map stabilized after delay`);
+          setMapStabilized(true);
+          
+          // Show success toast
+          toast({
+            title: "Map Ready",
+            description: "The map has been loaded and is ready to show locations.",
+          });
+        }
+      }, 3000);
+      
+      // Show initial loading toast
       toast({
         title: "Map Initialized",
-        description: "The map has been successfully loaded.",
+        description: "The map has been successfully loaded. Preparing locations...",
       });
     }
   }, [componentId]);
@@ -95,35 +110,39 @@ export const useMapboxWrapper = (
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     
-    if (isMapInitialized && map && doctors.length > 0 && !initialMarkersSet.current) {
-      console.log(`[${componentId}] Initial map markers setup`);
+    if (isMapInitialized && map && doctors.length > 0 && !initialMarkersSet.current && mapStabilized) {
+      console.log(`[${componentId}] Initial map markers setup after stabilization`);
       
       // Mark that we've scheduled the initial update
       initialMarkersSet.current = true;
       
-      // Add markers after a delay to ensure map is fully ready
+      // Add markers after the map has stabilized
       timer = setTimeout(() => {
         if (isMounted.current && map) {
           console.log(`[${componentId}] Executing initial marker update`);
           markersUpdatedRef.current = true;
           try {
             updateMarkers(doctors, selectedDoctor);
+            toast({
+              title: "Locations Added",
+              description: `Added ${doctors.length} doctor locations to the map.`,
+            });
           } catch (error) {
             console.error(`[${componentId}] Error in initial marker update:`, error);
           }
         }
-      }, 1000); // Increased delay for initial markers
+      }, 500); // Small additional delay after stabilization
     }
     
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers, componentId]);
+  }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers, componentId, mapStabilized]);
   
   // Use useCallback for marker updates to stabilize the effect dependency
   const updateMarkersWithDebounce = useCallback(() => {
-    // Skip if initial markers haven't been set yet
-    if (!markersUpdatedRef.current) {
+    // Skip if initial markers haven't been set yet or map is not stabilized
+    if (!markersUpdatedRef.current || !mapStabilized) {
       return;
     }
     
@@ -162,7 +181,7 @@ export const useMapboxWrapper = (
         mapExists: !!map
       });
     }
-  }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers, componentId]);
+  }, [isMapInitialized, map, doctors, selectedDoctor, updateMarkers, componentId, mapStabilized]);
   
   // Update markers when doctors or selected doctor changes - with stabilized callback
   useEffect(() => {
@@ -208,6 +227,7 @@ export const useMapboxWrapper = (
       setIsLoading(true);
       markersUpdatedRef.current = false;
       initialMarkersSet.current = false;
+      setMapStabilized(false);
       errorRetryCount.current = 0;
       resetMapState(); // Add this to ensure we start fresh
       reinitializeMap();
