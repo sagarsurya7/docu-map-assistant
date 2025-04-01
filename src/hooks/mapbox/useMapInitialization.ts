@@ -44,6 +44,14 @@ export const useMapInitialization = (
     try {
       console.log("Starting map initialization process");
       
+      // Add a 2-second delay before starting map initialization
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (!mountedRef.current) {
+        console.log("Component unmounted during initial delay");
+        return null;
+      }
+      
       // Load Mapbox library first
       await loadMapboxWithTimeout(mountedRef);
       
