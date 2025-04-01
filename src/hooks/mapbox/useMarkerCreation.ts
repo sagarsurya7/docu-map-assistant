@@ -35,13 +35,22 @@ export const createDoctorMarker = (
     // Create a DOM element for the marker
     const el = document.createElement('div');
     el.className = 'marker';
+    
+    // Apply specific styles directly to ensure visibility
     el.style.backgroundImage = `url(https://maps.google.com/mapfiles/ms/icons/${isSelected ? 'blue' : 'red'}-dot.png)`;
     el.style.width = '32px';
     el.style.height = '32px';
-    el.style.backgroundSize = 'cover';
+    el.style.backgroundSize = '100% 100%';
+    el.style.backgroundRepeat = 'no-repeat';
+    el.style.cursor = 'pointer';
     
+    // Add visual feedback class
     if (isSelected) {
       el.className = 'marker selected-marker';
+      el.style.zIndex = '10'; // Ensure selected marker appears on top
+      el.style.transform = 'scale(1.2)'; // Make selected marker slightly larger
+    } else {
+      el.style.zIndex = '5';
     }
     
     // Final check before adding marker to map
@@ -61,6 +70,7 @@ export const createDoctorMarker = (
       try {
         if (isMapValid(map)) {
           marker.addTo(map);
+          console.log(`Added ${isSelected ? 'blue' : 'red'} marker for doctor ${doctor.id}`);
           return marker;
         }
       } catch (e) {
