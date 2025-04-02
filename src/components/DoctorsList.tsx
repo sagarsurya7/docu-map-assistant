@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
   Card, 
@@ -27,28 +26,35 @@ interface DoctorsListProps {
   doctors: Doctor[];
   onSelectDoctor: (doctor: Doctor) => void;
   selectedDoctor: Doctor | null;
+  searchTerm?: string;
 }
 
 const DoctorsList: React.FC<DoctorsListProps> = ({ 
   doctors, 
   onSelectDoctor, 
-  selectedDoctor 
+  selectedDoctor,
+  searchTerm = ''
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   
   const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)));
   
   const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        doctor.address.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = doctor.name.toLowerCase().includes(localSearchTerm.toLowerCase()) || 
+                        doctor.specialty.toLowerCase().includes(localSearchTerm.toLowerCase()) ||
+                        doctor.address.toLowerCase().includes(localSearchTerm.toLowerCase());
     
     const matchesSpecialty = selectedSpecialty ? doctor.specialty === selectedSpecialty : true;
     
     return matchesSearch && matchesSpecialty;
   });
+
+  // Update local search term when prop changes
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
 
   return (
     <div className="h-full flex flex-col">
@@ -61,8 +67,8 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
             type="text"
             placeholder="Search doctors, specialties..."
             className="pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
           />
         </div>
         
@@ -142,7 +148,8 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pb-3 pt-0">
+                
+                <CardContent>
                   <div className="flex items-start text-sm text-muted-foreground mb-2">
                     <MapPin className="h-3.5 w-3.5 mr-1 mt-0.5 flex-shrink-0" />
                     <span>{doctor.address}</span>

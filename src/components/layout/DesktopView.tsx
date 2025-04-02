@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,10 +28,23 @@ const DesktopView: React.FC<DesktopViewProps> = ({
   toggleChatBot,
   toggleDoctorsList
 }) => {
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>(allDoctors);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearchDoctors = (term: string) => {
+    setSearchTerm(term);
+    const filtered = allDoctors.filter(doctor => 
+      doctor.name.toLowerCase().includes(term) ||
+      doctor.specialty.toLowerCase().includes(term) ||
+      doctor.address.toLowerCase().includes(term)
+    );
+    setFilteredDoctors(filtered);
+  };
+
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left Panel: Doctors List */}
-      <div className={`bg-white ${showDoctorsList ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-r`}>
+      <div className={`bg-white ${showDoctorsList ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-r h-full`}>
         {showDoctorsList && (
           <>
             {isLoading ? (
@@ -55,11 +67,14 @@ const DesktopView: React.FC<DesktopViewProps> = ({
                 ))}
               </div>
             ) : (
-              <DoctorsList 
-                doctors={allDoctors} 
-                selectedDoctor={selectedDoctor} 
-                onSelectDoctor={onSelectDoctor} 
-              />
+              <div className="h-full">
+                <DoctorsList 
+                  doctors={filteredDoctors} 
+                  selectedDoctor={selectedDoctor} 
+                  onSelectDoctor={onSelectDoctor}
+                  searchTerm={searchTerm}
+                />
+              </div>
             )}
             
             <Button 
@@ -97,7 +112,7 @@ const DesktopView: React.FC<DesktopViewProps> = ({
           </div>
         ) : (
           <GoogleMap 
-            doctors={allDoctors} 
+            doctors={filteredDoctors} 
             selectedDoctor={selectedDoctor}
             onSelectDoctor={onSelectDoctor} 
           />
@@ -108,7 +123,10 @@ const DesktopView: React.FC<DesktopViewProps> = ({
       <div className={`bg-white ${showChatBot ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-l`}>
         {showChatBot && (
           <>
-            <ChatBot />
+            <ChatBot 
+              doctors={allDoctors}
+              onSearchDoctors={handleSearchDoctors}
+            />
             
             <Button 
               className="absolute left-[-16px] top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full bg-white shadow-md z-10 p-0"
