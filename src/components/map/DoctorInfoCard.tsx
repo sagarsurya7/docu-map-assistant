@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Doctor } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,17 +8,19 @@ import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
 
 interface DoctorInfoCardProps {
   doctor: Doctor;
-  onClose: () => void;
-  onBookAppointment: (doctor: Doctor) => void;
+  onClose?: () => void;
+  onBookAppointment?: (doctor: Doctor) => void;
+  className?: string;
 }
 
 const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({ 
   doctor, 
   onClose, 
-  onBookAppointment 
+  onBookAppointment,
+  className = ''
 }) => {
   return (
-    <Card className="w-full max-w-sm shadow-lg">
+    <Card className={`w-full max-w-sm shadow-lg ${className}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center">
@@ -92,7 +95,7 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
           size="sm" 
           variant="default" 
           className="flex-1"
-          onClick={() => onBookAppointment(doctor)}
+          onClick={() => onBookAppointment && onBookAppointment(doctor)}
         >
           <Calendar className="h-4 w-4 mr-1" />
           Book
