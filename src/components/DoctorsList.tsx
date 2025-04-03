@@ -42,21 +42,31 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
+  const [doctors, setDoctors] = useState<Doctor[]>(Array.isArray(initialDoctors) ? initialDoctors : []);
   const [isLoading, setIsLoading] = useState(false);
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [areas, setAreas] = useState<string[]>([]);
   const { toast } = useToast();
   
+  // Update doctors when initialDoctors changes
+  useEffect(() => {
+    if (Array.isArray(initialDoctors)) {
+      setDoctors(initialDoctors);
+    } else {
+      console.warn("initialDoctors is not an array, setting empty array");
+      setDoctors([]);
+    }
+  }, [initialDoctors]);
+  
   // Fetch filter options on component mount
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
         const options = await getFilterOptions();
-        setSpecialties(options.specialties);
-        setCities(options.cities);
-        setAreas(options.areas);
+        setSpecialties(Array.isArray(options.specialties) ? options.specialties : []);
+        setCities(Array.isArray(options.cities) ? options.cities : []);
+        setAreas(Array.isArray(options.areas) ? options.areas : []);
       } catch (error) {
         console.error('Error fetching filter options:', error);
       }
@@ -78,7 +88,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
         };
         
         const fetchedDoctors = await getDoctors(filters);
-        setDoctors(fetchedDoctors);
+        setDoctors(Array.isArray(fetchedDoctors) ? fetchedDoctors : []);
       } catch (error) {
         console.error('Error fetching doctors:', error);
         toast({
@@ -86,6 +96,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
           description: 'Failed to fetch doctors',
           variant: 'destructive',
         });
+        setDoctors([]);
       } finally {
         setIsLoading(false);
       }

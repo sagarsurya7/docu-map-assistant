@@ -12,7 +12,9 @@ export function useDoctorsData() {
   useEffect(() => {
     // Simulate data loading
     const timer = setTimeout(() => {
-      setAllDoctors(doctorsData);
+      // Ensure doctorsData is an array before setting state
+      const validDoctorsData = Array.isArray(doctorsData) ? doctorsData : [];
+      setAllDoctors(validDoctorsData);
       setIsLoading(false);
       // Show welcome toast
       toast({

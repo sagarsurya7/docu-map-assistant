@@ -27,10 +27,17 @@ apiClient.interceptors.request.use(
     }
 );
 
-// Add response interceptor for error handling
+// Add response interceptor for error handling and data sanitization
 apiClient.interceptors.response.use(
     (response) => {
         console.log(`API Response: ${response.status} from ${response.config.url}`);
+        
+        // Ensure that response data that should be arrays is always an array
+        if (response.config.url?.includes('/doctors') && !Array.isArray(response.data)) {
+            console.warn('Doctors API did not return an array, converting to array format');
+            response.data = Array.isArray(response.data.doctors) ? response.data.doctors : [];
+        }
+        
         return response;
     },
     (error) => {
