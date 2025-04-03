@@ -21,8 +21,11 @@ export const useMarkerUpdater = (
   
   // Function to update markers
   const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
+    // Ensure doctors is always an array
+    const safeDoctors = Array.isArray(doctors) ? doctors : [];
+    
     // Store the current doctors and selected doctor for retry logic
-    lastDoctorsRef.current = doctors;
+    lastDoctorsRef.current = safeDoctors;
     lastSelectedDoctorRef.current = selectedDoctor;
     
     // Prevent concurrent updates which may cause issues
@@ -64,11 +67,11 @@ export const useMarkerUpdater = (
       const newMarkers: any[] = [];
       
       // Only add markers if doctors exist and map is valid
-      if (doctors.length > 0 && isMapValid(map)) {
-        console.log(`Adding ${doctors.length} markers to map, selected doctor: ${selectedDoctor?.id || 'none'}`);
+      if (safeDoctors.length > 0 && isMapValid(map)) {
+        console.log(`Adding ${safeDoctors.length} markers to map, selected doctor: ${selectedDoctor?.id || 'none'}`);
         
         // First add non-selected doctors so selected one appears on top
-        [...doctors]
+        [...safeDoctors]
           .sort((a, b) => {
             // Sort so selected doctor is processed last (appears on top)
             if (a.id === selectedDoctor?.id) return 1;
@@ -76,6 +79,12 @@ export const useMarkerUpdater = (
             return 0;
           })
           .forEach(doctor => {
+            // Skip invalid doctor data
+            if (!doctor || typeof doctor !== 'object' || !doctor.id) {
+              console.warn("Invalid doctor object skipped", doctor);
+              return;
+            }
+            
             const isSelected = selectedDoctor?.id === doctor.id;
             
             // Create marker and add to collection

@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Activity } from 'lucide-react';
 import BackendStatus from '@/components/BackendStatus';
+import { toast } from '@/components/ui/use-toast';
 
 // For demo purposes we're using a demo API key
 // In production, you should use an environment variable
@@ -20,7 +21,8 @@ const Index = () => {
     isLoading,
     allDoctors,
     selectedDoctor,
-    handleSelectDoctor
+    handleSelectDoctor,
+    error
   } = useDoctorsData();
 
   const [showChatBot, setShowChatBot] = useState(true);
@@ -30,6 +32,20 @@ const Index = () => {
   
   const toggleChatBot = () => setShowChatBot(!showChatBot);
   const toggleDoctorsList = () => setShowDoctorsList(!showDoctorsList);
+  
+  // Handle data errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Data Error",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error]);
+
+  // Ensure allDoctors is always an array
+  const safeDoctors = Array.isArray(allDoctors) ? allDoctors : [];
   
   // Reset mobile view to list when switching between mobile and desktop
   useEffect(() => {
@@ -65,7 +81,7 @@ const Index = () => {
               mobileView={mobileView}
               setMobileView={setMobileView}
               isLoading={isLoading}
-              allDoctors={allDoctors}
+              allDoctors={safeDoctors}
               selectedDoctor={selectedDoctor}
               handleSelectDoctor={(doctor) => {
                 handleSelectDoctor(doctor);
@@ -77,7 +93,7 @@ const Index = () => {
           ) : (
             <DesktopView
               isLoading={isLoading}
-              allDoctors={allDoctors}
+              allDoctors={safeDoctors}
               selectedDoctor={selectedDoctor}
               onSelectDoctor={handleSelectDoctor}
               showChatBot={showChatBot}

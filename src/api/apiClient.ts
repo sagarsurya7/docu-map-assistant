@@ -32,10 +32,37 @@ apiClient.interceptors.response.use(
     (response) => {
         console.log(`API Response: ${response.status} from ${response.config.url}`);
         
-        // Ensure that response data that should be arrays is always an array
+        // Ensure all response data expected to be arrays are arrays
         if (response.config.url?.includes('/doctors') && !Array.isArray(response.data)) {
             console.warn('Doctors API did not return an array, converting to array format');
-            response.data = Array.isArray(response.data.doctors) ? response.data.doctors : [];
+            // Check if the data is in a nested property first
+            if (response.data && typeof response.data === 'object' && Array.isArray(response.data.doctors)) {
+                response.data = response.data.doctors;
+            } else {
+                // If not, set an empty array
+                response.data = [];
+            }
+        }
+        
+        if (response.config.url?.includes('/symptoms') && !Array.isArray(response.data)) {
+            console.warn('Symptoms API did not return an array, converting to array format');
+            // Check if the data is in a nested property first
+            if (response.data && typeof response.data === 'object' && Array.isArray(response.data.symptoms)) {
+                response.data = response.data.symptoms;
+            } else {
+                // If not, set an empty array
+                response.data = [];
+            }
+        }
+        
+        if (response.config.url?.includes('/doctors/filters') && response.data) {
+            // Ensure filter options are always arrays
+            const { specialties, cities, areas } = response.data;
+            response.data = {
+                specialties: Array.isArray(specialties) ? specialties : [],
+                cities: Array.isArray(cities) ? cities : [],
+                areas: Array.isArray(areas) ? areas : []
+            };
         }
         
         return response;
