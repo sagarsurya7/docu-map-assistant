@@ -10,7 +10,7 @@ const apiClient = axios.create({
         'Accept': 'application/json'
     },
     // Add a timeout to prevent hanging requests
-    timeout: 10000,
+    timeout: 15000, // Increased timeout for slower connections
     // Enable sending cookies with requests
     withCredentials: false
 });
@@ -38,6 +38,10 @@ apiClient.interceptors.response.use(
             // Check if the data is in a nested property first
             if (response.data && typeof response.data === 'object' && Array.isArray(response.data.doctors)) {
                 response.data = response.data.doctors;
+            } else if (response.data && typeof response.data === 'object') {
+                // If it's an object but not an array, convert to array with that item
+                console.warn('Converting object to single-item array');
+                response.data = [response.data];
             } else {
                 // If not, set an empty array
                 response.data = [];
@@ -49,6 +53,10 @@ apiClient.interceptors.response.use(
             // Check if the data is in a nested property first
             if (response.data && typeof response.data === 'object' && Array.isArray(response.data.symptoms)) {
                 response.data = response.data.symptoms;
+            } else if (response.data && typeof response.data === 'object') {
+                // If it's an object but not an array, convert to array with that item
+                console.warn('Converting object to single-item array');
+                response.data = [response.data];
             } else {
                 // If not, set an empty array
                 response.data = [];
@@ -57,7 +65,7 @@ apiClient.interceptors.response.use(
         
         if (response.config.url?.includes('/doctors/filters') && response.data) {
             // Ensure filter options are always arrays
-            const { specialties, cities, areas } = response.data;
+            const { specialties = [], cities = [], areas = [] } = response.data;
             response.data = {
                 specialties: Array.isArray(specialties) ? specialties : [],
                 cities: Array.isArray(cities) ? cities : [],
@@ -71,10 +79,12 @@ apiClient.interceptors.response.use(
         if (axios.isCancel(error)) {
             console.warn('API Request was cancelled:', error.message);
         } else if (error.code === 'ERR_NETWORK') {
-            console.error('Network error - this might be a CORS issue:');
+            console.error('Network error - this might be a CORS issue or backend connection:');
             console.error('- Check that the Vite proxy is properly configured');
             console.error('- Ensure your backend server is running on port 3001');
             console.error('- Full error:', error.message);
+        } else if (error.code === 'ECONNABORTED') {
+            console.error('Request timeout - backend server might be slow or unresponsive');
         } else if (!error.response) {
             // Network error or server not running
             console.error('Network error or backend server not running. Please start the backend server on port 3001.');
@@ -99,14 +109,23 @@ apiClient.interceptors.response.use(
 
 // Test the connection to the backend when the module loads
 console.log('Testing connection to backend server...');
-apiClient.get('/health')
-    .then(() => console.log('✅ Backend server connection successful'))
-    .catch(error => {
-        if (error.code === 'ERR_NETWORK') {
-            console.warn('⚠️ Connection issue detected. Make sure your backend server is running on port 3001.');
-        } else {
-            console.warn('⚠️ Could not connect to backend server:', error.message);
-        }
-    });
+const connectionTest = () => {
+    apiClient.get('/health')
+        .then(() => console.log('✅ Backend server connection successful'))
+        .catch(error => {
+            if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+                console.warn('⚠️ Connection issue detected. Make sure your backend server is running on port 3001.');
+                console.log('The app will function with fallback data if available.');
+            } else {
+                console.warn('⚠️ Could not connect to backend server:', error.message);
+            }
+        });
+};
+
+// Initial connection test
+connectionTest();
+
+// Re-test connection periodically
+setInterval(connectionTest, 60000); // Check every minute
 
 export default apiClient;
