@@ -7,6 +7,7 @@ import apiClient from '@/api/apiClient';
 const BackendStatus: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
   const [errorDetails, setErrorDetails] = useState<string>('');
+  const [isCorsIssue, setIsCorsIssue] = useState<boolean>(false);
 
   useEffect(() => {
     const checkBackendStatus = async () => {
@@ -14,12 +15,20 @@ const BackendStatus: React.FC = () => {
         await apiClient.get('/health');
         setStatus('connected');
         setErrorDetails('');
+        setIsCorsIssue(false);
       } catch (error) {
         console.error('Backend connection error:', error);
         setStatus('disconnected');
         
         if (error instanceof Error) {
           setErrorDetails(error.message);
+          
+          // Check for potential CORS errors
+          if (error.message.includes('NetworkError') || 
+              error.message.includes('Network Error') || 
+              (error as any).code === 'ERR_NETWORK') {
+            setIsCorsIssue(true);
+          }
         } else {
           setErrorDetails('Unknown error occurred');
         }
@@ -53,7 +62,20 @@ const BackendStatus: React.FC = () => {
         <AlertTitle>Backend unavailable</AlertTitle>
         <AlertDescription>
           Cannot connect to the backend. Make sure the server is running at http://localhost:3001
-          {errorDetails && (
+          {isCorsIssue && (
+            <div className="mt-2 text-xs text-red-700 bg-red-50 p-2 rounded border border-red-200">
+              <strong>CORS Issue Detected:</strong> Your backend server needs to allow requests from this frontend.
+              <div className="mt-1">
+                Add these headers to your backend responses:
+                <pre className="bg-red-100 p-1 mt-1 text-[10px] overflow-x-auto">
+                  Access-Control-Allow-Origin: http://localhost:8080<br/>
+                  Access-Control-Allow-Methods: GET,POST,PUT,DELETE<br/>
+                  Access-Control-Allow-Headers: Content-Type,Authorization
+                </pre>
+              </div>
+            </div>
+          )}
+          {!isCorsIssue && errorDetails && (
             <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
               Error: {errorDetails}
             </div>
