@@ -6,15 +6,23 @@ import apiClient from '@/api/apiClient';
 
 const BackendStatus: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
+  const [errorDetails, setErrorDetails] = useState<string>('');
 
   useEffect(() => {
     const checkBackendStatus = async () => {
       try {
         await apiClient.get('/health');
         setStatus('connected');
+        setErrorDetails('');
       } catch (error) {
         console.error('Backend connection error:', error);
         setStatus('disconnected');
+        
+        if (error instanceof Error) {
+          setErrorDetails(error.message);
+        } else {
+          setErrorDetails('Unknown error occurred');
+        }
       }
     };
 
@@ -45,6 +53,11 @@ const BackendStatus: React.FC = () => {
         <AlertTitle>Backend unavailable</AlertTitle>
         <AlertDescription>
           Cannot connect to the backend. Make sure the server is running at http://localhost:3001
+          {errorDetails && (
+            <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+              Error: {errorDetails}
+            </div>
+          )}
         </AlertDescription>
       </Alert>
     );
