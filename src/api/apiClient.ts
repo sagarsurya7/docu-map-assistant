@@ -3,7 +3,8 @@ import axios from 'axios';
 
 // Create an axios instance with default config
 const apiClient = axios.create({
-    baseURL: 'http://localhost:3001/api',
+    // Use a relative URL to leverage the Vite proxy
+    baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -17,7 +18,7 @@ const apiClient = axios.create({
 // Add request interceptor for debugging
 apiClient.interceptors.request.use(
     (config) => {
-        console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.params || {});
+        console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config.params || {});
         return config;
     },
     (error) => {
@@ -37,8 +38,8 @@ apiClient.interceptors.response.use(
             console.warn('API Request was cancelled:', error.message);
         } else if (error.code === 'ERR_NETWORK') {
             console.error('Network error - this might be a CORS issue:');
-            console.error(`- Check that your backend at ${apiClient.defaults.baseURL} has CORS enabled`);
-            console.error('- Ensure your backend includes the header: Access-Control-Allow-Origin: http://localhost:8080');
+            console.error('- Check that the Vite proxy is properly configured');
+            console.error('- Ensure your backend server is running on port 3001');
             console.error('- Full error:', error.message);
         } else if (!error.response) {
             // Network error or server not running
@@ -68,7 +69,7 @@ apiClient.get('/health')
     .then(() => console.log('✅ Backend server connection successful'))
     .catch(error => {
         if (error.code === 'ERR_NETWORK') {
-            console.warn('⚠️ CORS issue detected when connecting to backend server. Make sure your backend has CORS enabled.');
+            console.warn('⚠️ Connection issue detected. Make sure your backend server is running on port 3001.');
         } else {
             console.warn('⚠️ Could not connect to backend server:', error.message);
         }

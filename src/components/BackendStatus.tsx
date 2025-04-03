@@ -7,7 +7,7 @@ import apiClient from '@/api/apiClient';
 const BackendStatus: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
   const [errorDetails, setErrorDetails] = useState<string>('');
-  const [isCorsIssue, setIsCorsIssue] = useState<boolean>(false);
+  const [isConnectionIssue, setIsConnectionIssue] = useState<boolean>(false);
 
   useEffect(() => {
     const checkBackendStatus = async () => {
@@ -15,7 +15,7 @@ const BackendStatus: React.FC = () => {
         await apiClient.get('/health');
         setStatus('connected');
         setErrorDetails('');
-        setIsCorsIssue(false);
+        setIsConnectionIssue(false);
       } catch (error) {
         console.error('Backend connection error:', error);
         setStatus('disconnected');
@@ -23,11 +23,11 @@ const BackendStatus: React.FC = () => {
         if (error instanceof Error) {
           setErrorDetails(error.message);
           
-          // Check for potential CORS errors
+          // Check for connection issues
           if (error.message.includes('NetworkError') || 
               error.message.includes('Network Error') || 
               (error as any).code === 'ERR_NETWORK') {
-            setIsCorsIssue(true);
+            setIsConnectionIssue(true);
           }
         } else {
           setErrorDetails('Unknown error occurred');
@@ -62,20 +62,19 @@ const BackendStatus: React.FC = () => {
         <AlertTitle>Backend unavailable</AlertTitle>
         <AlertDescription>
           Cannot connect to the backend. Make sure the server is running at http://localhost:3001
-          {isCorsIssue && (
+          {isConnectionIssue && (
             <div className="mt-2 text-xs text-red-700 bg-red-50 p-2 rounded border border-red-200">
-              <strong>CORS Issue Detected:</strong> Your backend server needs to allow requests from this frontend.
+              <strong>Connection Issue Detected:</strong> Your backend server needs to be running.
               <div className="mt-1">
-                Add these headers to your backend responses:
-                <pre className="bg-red-100 p-1 mt-1 text-[10px] overflow-x-auto">
-                  Access-Control-Allow-Origin: http://localhost:8080<br/>
-                  Access-Control-Allow-Methods: GET,POST,PUT,DELETE<br/>
-                  Access-Control-Allow-Headers: Content-Type,Authorization
-                </pre>
+                <ul className="list-disc pl-4">
+                  <li>Ensure your backend server is running on port 3001</li>
+                  <li>Check that the server has a <code>/api/health</code> endpoint</li>
+                  <li>The Vite proxy is configured to forward API requests to your backend</li>
+                </ul>
               </div>
             </div>
           )}
-          {!isCorsIssue && errorDetails && (
+          {!isConnectionIssue && errorDetails && (
             <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
               Error: {errorDetails}
             </div>
