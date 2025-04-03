@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
   Card, 
@@ -19,9 +19,12 @@ import {
   ChevronDown, 
   ChevronUp,
   Search,
-  Filter
+  Filter,
+  Loader2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { getDoctors, getFilterOptions } from '@/api/doctorService';
+import { useToast } from '@/components/ui/use-toast';
 
 interface DoctorsListProps {
   doctors: Doctor[];
@@ -30,25 +33,71 @@ interface DoctorsListProps {
 }
 
 const DoctorsList: React.FC<DoctorsListProps> = ({ 
-  doctors, 
+  doctors: initialDoctors, 
   onSelectDoctor, 
   selectedDoctor 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedArea, setSelectedArea] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
+  const [isLoading, setIsLoading] = useState(false);
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const { toast } = useToast();
   
-  const specialties = Array.from(new Set(doctors.map(doctor => doctor.specialty)));
-  
-  const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        doctor.address.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesSpecialty = selectedSpecialty ? doctor.specialty === selectedSpecialty : true;
-    
-    return matchesSearch && matchesSpecialty;
-  });
+  // Fetch filter options on component mount
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const options = await getFilterOptions();
+        setSpecialties(options.specialties);
+        setCities(options.cities);
+        setAreas(options.areas);
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    };
+
+    fetchFilterOptions();
+  }, []);
+
+  // Fetch doctors when filters change
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      setIsLoading(true);
+      try {
+        const filters = {
+          search: searchTerm || undefined,
+          specialty: selectedSpecialty || undefined,
+          city: selectedCity || undefined,
+          area: selectedArea || undefined
+        };
+        
+        const fetchedDoctors = await getDoctors(filters);
+        setDoctors(fetchedDoctors);
+      } catch (error) {
+        console.error('Error fetching doctors:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch doctors',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Add a debounce to avoid too many API calls
+    const timerId = setTimeout(() => {
+      fetchDoctors();
+    }, 500);
+
+    return () => clearTimeout(timerId);
+  }, [searchTerm, selectedSpecialty, selectedCity, selectedArea, toast]);
 
   return (
     <div className="h-full flex flex-col">
@@ -102,18 +151,68 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 ))}
               </div>
             </div>
+            
+            <div className="mb-3">
+              <p className="text-sm font-medium mb-2">City</p>
+              <div className="flex flex-wrap gap-2">
+                <Badge 
+                  variant={selectedCity === '' ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedCity('')}
+                >
+                  All
+                </Badge>
+                {cities.map(city => (
+                  <Badge 
+                    key={city}
+                    variant={selectedCity === city ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedCity(city)}
+                  >
+                    {city}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <p className="text-sm font-medium mb-2">Area</p>
+              <div className="flex flex-wrap gap-2">
+                <Badge 
+                  variant={selectedArea === '' ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedArea('')}
+                >
+                  All
+                </Badge>
+                {areas.map(area => (
+                  <Badge 
+                    key={area}
+                    variant={selectedArea === area ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedArea(area)}
+                  >
+                    {area}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        {filteredDoctors.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="h-6 w-6 animate-spin text-medical" />
+          </div>
+        ) : doctors.length === 0 ? (
           <div className="p-6 text-center text-muted-foreground">
             No doctors found matching your criteria
           </div>
         ) : (
           <div className="p-4 space-y-4">
-            {filteredDoctors.map((doctor) => (
+            {doctors.map((doctor) => (
               <Card 
                 key={doctor.id} 
                 className={`cursor-pointer hover:shadow-md transition-shadow duration-200 ${
@@ -126,9 +225,13 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                     <div className="flex items-center">
                       <div className="mr-3">
                         <img 
-                          src={doctor.image} 
+                          src={doctor.imageUrl || "https://randomuser.me/api/portraits/men/1.jpg"} 
                           alt={doctor.name} 
                           className="h-10 w-10 rounded-full object-cover" 
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://randomuser.me/api/portraits/men/1.jpg";
+                          }}
                         />
                       </div>
                       <div>
@@ -153,6 +256,12 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                       className={`${doctor.available ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
                     >
                       {doctor.available ? 'Available Today' : 'Not Available Today'}
+                    </Badge>
+                    <Badge 
+                      variant="outline"
+                      className="ml-2"
+                    >
+                      ₹{doctor.consultationFee}
                     </Badge>
                   </div>
                 </CardContent>

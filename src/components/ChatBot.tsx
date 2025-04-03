@@ -6,12 +6,15 @@ import { Bot } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import ChatMessageList from './chat/ChatMessageList';
 import ChatInput from './chat/ChatInput';
-import { initialMessages, generateResponse } from '@/utils/chatUtils';
+import { initialMessages } from '@/utils/chatUtils';
+import { sendChatMessage } from '@/api/chatService';
+import { useToast } from '@/components/ui/use-toast';
 
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [isTyping, setIsTyping] = useState(false);
   const isMounted = useRef(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     isMounted.current = true;
@@ -20,7 +23,7 @@ const ChatBot: React.FC = () => {
     };
   }, []);
 
-  const handleSendMessage = (input: string) => {
+  const handleSendMessage = async (input: string) => {
     // Add user message
     const userMessage: ChatMessage = {
       role: 'user',
@@ -30,21 +33,28 @@ const ChatBot: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
     
-    // Simulate AI response after a delay
-    const timer = setTimeout(() => {
+    try {
+      // Send message to backend
+      const response = await sendChatMessage(input);
+      
       if (isMounted.current) {
-        const response = generateResponse(input.toLowerCase());
-        
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: response
+          content: response.response
         }]);
-        
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI. Please try again later.",
+        variant: "destructive"
+      });
+      console.error('Chat error:', error);
+    } finally {
+      if (isMounted.current) {
         setIsTyping(false);
       }
-    }, 1500);
-    
-    return () => clearTimeout(timer);
+    }
   };
 
   return (
