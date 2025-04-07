@@ -22,6 +22,9 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   // Track if component is mounted
   const isMounted = useRef(true);
   
+  // Ensure doctors is always an array
+  const safeDoctors = Array.isArray(doctors) ? doctors : [];
+  
   // Simplified useEffect with minimal cleanup
   useEffect(() => {
     isMounted.current = true;
@@ -50,7 +53,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     <div className="h-full relative">
       <MapboxWrapper
         key={mapKey}
-        doctors={doctors}
+        doctors={safeDoctors}
         selectedDoctor={selectedDoctor}
         onSelectDoctor={onSelectDoctor}
         onCriticalError={handleCriticalError}

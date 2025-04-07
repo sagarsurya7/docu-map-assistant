@@ -6,6 +6,11 @@ import { CopilotKit } from '@copilotkit/react-core';
 import { useDoctorsData } from '@/hooks/use-doctors-data';
 import MobileView from '@/components/layout/MobileView';
 import DesktopView from '@/components/layout/DesktopView';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Activity } from 'lucide-react';
+import BackendStatus from '@/components/BackendStatus';
+import { toast } from '@/components/ui/use-toast';
 
 // For demo purposes we're using a demo API key
 // In production, you should use an environment variable
@@ -16,7 +21,8 @@ const Index = () => {
     isLoading,
     allDoctors,
     selectedDoctor,
-    handleSelectDoctor
+    handleSelectDoctor,
+    error
   } = useDoctorsData();
 
   const [showChatBot, setShowChatBot] = useState(true);
@@ -26,6 +32,20 @@ const Index = () => {
   
   const toggleChatBot = () => setShowChatBot(!showChatBot);
   const toggleDoctorsList = () => setShowDoctorsList(!showDoctorsList);
+  
+  // Handle data errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Data Error",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error]);
+
+  // Ensure allDoctors is always an array
+  const safeDoctors = Array.isArray(allDoctors) ? allDoctors : [];
   
   // Reset mobile view to list when switching between mobile and desktop
   useEffect(() => {
@@ -42,13 +62,26 @@ const Index = () => {
           toggleMobileMenu={() => setMobileView('list')} 
         />
         
+        <div className="container mx-auto px-4 py-2">
+          <BackendStatus />
+          
+          <div className="mb-3">
+            <Button asChild>
+              <Link to="/symptom-analyzer" className="flex items-center">
+                <Activity className="mr-2 h-4 w-4" />
+                Symptom Analyzer
+              </Link>
+            </Button>
+          </div>
+        </div>
+        
         <main className="flex-1 overflow-hidden">
           {isMobile ? (
             <MobileView
               mobileView={mobileView}
               setMobileView={setMobileView}
               isLoading={isLoading}
-              allDoctors={allDoctors}
+              allDoctors={safeDoctors}
               selectedDoctor={selectedDoctor}
               handleSelectDoctor={(doctor) => {
                 handleSelectDoctor(doctor);
@@ -60,7 +93,7 @@ const Index = () => {
           ) : (
             <DesktopView
               isLoading={isLoading}
-              allDoctors={allDoctors}
+              allDoctors={safeDoctors}
               selectedDoctor={selectedDoctor}
               onSelectDoctor={handleSelectDoctor}
               showChatBot={showChatBot}

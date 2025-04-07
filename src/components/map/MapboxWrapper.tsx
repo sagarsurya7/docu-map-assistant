@@ -22,6 +22,9 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   
   console.log(`[${componentId}] MapboxWrapper rendering`);
 
+  // Ensure doctors is an array
+  const validDoctors = Array.isArray(doctors) ? doctors : [];
+  
   // Use the refactored hook for map functionality
   const {
     mapRef,
@@ -29,7 +32,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     mapError,
     isMapInitialized,
     handleManualRetry
-  } = useMapboxWrapper(doctors, selectedDoctor, onCriticalError, componentId);
+  } = useMapboxWrapper(validDoctors, selectedDoctor, onCriticalError, componentId);
 
   console.log(`[${componentId}] MapboxWrapper rendering complete`);
 

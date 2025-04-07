@@ -16,6 +16,13 @@ export const createDoctorMarker = (
       return null;
     }
 
+    // Skip invalid doctor data or doctors without location
+    if (!doctor || !doctor.location || typeof doctor.location !== 'object' || 
+        typeof doctor.location.lat !== 'number' || typeof doctor.location.lng !== 'number') {
+      console.warn("Doctor missing valid location data:", doctor);
+      return null;
+    }
+
     // Create popup
     const popup = new window.mapboxgl.Popup({ 
       offset: 25,
@@ -23,9 +30,9 @@ export const createDoctorMarker = (
       closeOnClick: true
     }).setHTML(`
       <div class="p-2">
-        <div class="font-semibold">${doctor.name}</div>
-        <div class="text-sm">${doctor.specialty}</div>
-        <div class="text-xs mt-1">${doctor.address}</div>
+        <div class="font-semibold">${doctor.name || 'Unknown Doctor'}</div>
+        <div class="text-sm">${doctor.specialty || 'Specialty not specified'}</div>
+        <div class="text-xs mt-1">${doctor.address || 'Address not available'}</div>
       </div>
     `);
     
@@ -78,7 +85,7 @@ export const createDoctorMarker = (
       }
     }
   } catch (error) {
-    console.log("Error creating marker for doctor:", doctor.id, error);
+    console.log("Error creating marker for doctor:", doctor?.id, error);
   }
   
   return null;
@@ -94,6 +101,13 @@ export const flyToSelectedDoctor = (
   if (!isMapValid(map)) return;
   
   try {
+    // Skip if doctor location is invalid
+    if (!doctor || !doctor.location || typeof doctor.location !== 'object' || 
+        typeof doctor.location.lat !== 'number' || typeof doctor.location.lng !== 'number') {
+      console.warn("Cannot fly to doctor with invalid location:", doctor);
+      return;
+    }
+    
     console.log(`Flying to selected doctor ${doctor.id}`);
     // Center map on selected doctor with a smooth animation
     map.flyTo({

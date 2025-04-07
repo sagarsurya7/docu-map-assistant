@@ -1,8 +1,47 @@
-
-import { Doctor } from '../types';
+export interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  address: string;
+  area: string;
+  city: string;
+  state: string;
+  country: string;
+  rating: number;
+  experience: number;
+  languages: string[];
+  education: string[];
+  available: boolean;
+  consultationFee: number;
+  imageUrl: string;
+  availability: {
+    [key: string]: {
+      morning: boolean;
+      afternoon: boolean;
+      evening: boolean;
+    };
+  };
+}
 
 // List of Pune areas for autocomplete
 export const puneAreas = [
+  "Kalyani Nagar",
+  "Koregaon Park",
+  "Viman Nagar",
+  "Aundh",
+  "Baner",
+  "Hinjewadi",
+  "Wakad",
+  "Kharadi",
+  "Magarpatta",
+  "Hadapsar",
+  "Kondhwa",
+  "Bibwewadi",
+  "Katraj",
+  "Swargate",
+  "Deccan",
+  "Shivaji Nagar",
+  "Camp",
   "Kalyani Nagar",
   "Koregaon Park",
   "Viman Nagar",
@@ -46,7 +85,7 @@ export const specialties = [
   "Nutritionist"
 ];
 
-// Sample doctors data (modified to match the expected types)
+// Sample doctors data
 export const doctors: Doctor[] = [
   {
     id: "1",
@@ -68,11 +107,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 1500,
     imageUrl: "https://example.com/doctor1.jpg",
-    location: {
-      lat: 18.5489,
-      lng: 73.9089
-    },
-    reviews: [],
     availability: {
       Monday: { morning: true, afternoon: true, evening: false },
       Tuesday: { morning: true, afternoon: true, evening: false },
@@ -103,11 +137,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 2000,
     imageUrl: "https://example.com/doctor2.jpg",
-    location: {
-      lat: 18.5362,
-      lng: 73.8932
-    },
-    reviews: [],
     availability: {
       Monday: { morning: true, afternoon: false, evening: true },
       Tuesday: { morning: true, afternoon: false, evening: true },
@@ -138,11 +167,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 1800,
     imageUrl: "https://example.com/doctor3.jpg",
-    location: {
-      lat: 18.5642,
-      lng: 73.7769
-    },
-    reviews: [],
     availability: {
       Monday: { morning: false, afternoon: true, evening: true },
       Tuesday: { morning: false, afternoon: true, evening: true },
@@ -173,11 +197,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 1200,
     imageUrl: "https://example.com/doctor4.jpg",
-    location: {
-      lat: 18.5204,
-      lng: 73.8567
-    },
-    reviews: [],
     availability: {
       Monday: { morning: true, afternoon: true, evening: false },
       Tuesday: { morning: true, afternoon: true, evening: false },
@@ -208,11 +227,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 1600,
     imageUrl: "https://example.com/doctor5.jpg",
-    location: {
-      lat: 18.5679,
-      lng: 73.8077
-    },
-    reviews: [],
     availability: {
       Monday: { morning: false, afternoon: true, evening: true },
       Tuesday: { morning: false, afternoon: true, evening: true },
@@ -243,11 +257,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 1400,
     imageUrl: "https://example.com/doctor6.jpg",
-    location: {
-      lat: 18.5281,
-      lng: 73.8414
-    },
-    reviews: [],
     availability: {
       Monday: { morning: true, afternoon: false, evening: true },
       Tuesday: { morning: true, afternoon: false, evening: true },
@@ -278,11 +287,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 1700,
     imageUrl: "https://example.com/doctor7.jpg",
-    location: {
-      lat: 18.5089,
-      lng: 73.9260
-    },
-    reviews: [],
     availability: {
       Monday: { morning: true, afternoon: true, evening: false },
       Tuesday: { morning: true, afternoon: true, evening: false },
@@ -313,11 +317,6 @@ export const doctors: Doctor[] = [
     available: true,
     consultationFee: 2000,
     imageUrl: "https://example.com/doctor8.jpg",
-    location: {
-      lat: 18.5679,
-      lng: 73.9143
-    },
-    reviews: [],
     availability: {
       Monday: { morning: false, afternoon: true, evening: true },
       Tuesday: { morning: false, afternoon: true, evening: true },
@@ -369,4 +368,4 @@ export function getUniqueCities(): string[] {
 
 export function getUniqueAreas(): string[] {
   return [...new Set(doctors.map(doctor => doctor.area))];
-}
+} 
