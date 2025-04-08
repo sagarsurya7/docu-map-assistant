@@ -24,7 +24,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
   isMapInitialized,
   onRetry
 }) => {
-  // Using a ref to track initial load to prevent multiple toasts
+  // Using refs to track initial load to prevent multiple toasts
   const initializedToastShown = useRef(false);
   const stabilizingMessageShown = useRef(false);
   
@@ -38,14 +38,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
       });
     }
   }, [isMapInitialized, isLoading]);
-
-  // Use a mutable ref for DOM assignment
-  const mapContainerRef = React.useCallback((node: HTMLDivElement | null) => {
-    if (mapRef && typeof mapRef === 'object') {
-      // Use a direct assignment instead of Object.defineProperty
-      mapRef.current = node;
-    }
-  }, [mapRef]);
 
   // Show stabilizing message only once
   const [showStabilizingMessage, setShowStabilizingMessage] = React.useState(false);
@@ -72,7 +64,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         />
       ) : (
         <>
-          <div ref={mapContainerRef} className="h-full w-full mapbox-container"></div>
+          <div ref={mapRef} className="h-full w-full mapbox-container"></div>
           {isLoading && <LoadingIndicator />}
           {showStabilizingMessage && (
             <div className="absolute top-4 left-4 bg-white/80 px-4 py-2 rounded-md shadow-md text-sm font-medium animate-pulse">

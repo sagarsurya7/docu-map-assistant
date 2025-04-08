@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
@@ -140,6 +141,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               <p className="text-sm font-medium mb-2">Specialty</p>
               <div className="flex flex-wrap gap-2">
                 <Badge 
+                  key="specialty-all"
                   variant={selectedSpecialty === '' ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => setSelectedSpecialty('')}
@@ -148,7 +150,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 </Badge>
                 {specialties.map(specialty => (
                   <Badge 
-                    key={specialty}
+                    key={`specialty-${specialty}`}
                     variant={selectedSpecialty === specialty ? "default" : "outline"}
                     className="cursor-pointer"
                     onClick={() => setSelectedSpecialty(specialty)}
@@ -163,6 +165,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               <p className="text-sm font-medium mb-2">City</p>
               <div className="flex flex-wrap gap-2">
                 <Badge 
+                  key="city-all"
                   variant={selectedCity === '' ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => setSelectedCity('')}
@@ -171,7 +174,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 </Badge>
                 {cities.map(city => (
                   <Badge 
-                    key={city}
+                    key={`city-${city}`}
                     variant={selectedCity === city ? "default" : "outline"}
                     className="cursor-pointer"
                     onClick={() => setSelectedCity(city)}
@@ -186,6 +189,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               <p className="text-sm font-medium mb-2">Area</p>
               <div className="flex flex-wrap gap-2">
                 <Badge 
+                  key="area-all"
                   variant={selectedArea === '' ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => setSelectedArea('')}
@@ -194,7 +198,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 </Badge>
                 {areas.map(area => (
                   <Badge 
-                    key={area}
+                    key={`area-${area}`}
                     variant={selectedArea === area ? "default" : "outline"}
                     className="cursor-pointer"
                     onClick={() => setSelectedArea(area)}
