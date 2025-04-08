@@ -1,5 +1,5 @@
 
-import React, { useEffect, memo } from 'react';
+import React, { useEffect, memo, useRef } from 'react';
 import MapStyles from './MapStyles';
 import LoadingIndicator from './LoadingIndicator';
 import MapError from './MapError';
@@ -24,9 +24,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
   isMapInitialized,
   onRetry
 }) => {
-  // Show a toast notification when the map is initialized
   // Using a ref to track initial load to prevent multiple toasts
-  const initializedToastShown = React.useRef(false);
+  const initializedToastShown = useRef(false);
+  const stabilizingMessageShown = useRef(false);
   
   useEffect(() => {
     if (isMapInitialized && !isLoading && !initializedToastShown.current) {
@@ -39,23 +39,20 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [isMapInitialized, isLoading]);
 
-  // Use a mutable ref for DOM assignment - handling it in a safe, serializable way
+  // Use a mutable ref for DOM assignment
   const mapContainerRef = React.useCallback((node: HTMLDivElement | null) => {
-    // Using safe object assignment to avoid circular references
     if (mapRef && typeof mapRef === 'object') {
-      // Safely update the current property
-      Object.defineProperty(mapRef, 'current', {
-        writable: true,
-        value: node
-      });
+      // Use a direct assignment instead of Object.defineProperty
+      mapRef.current = node;
     }
   }, [mapRef]);
 
-  // Loading message shown only once after map initialization
+  // Show stabilizing message only once
   const [showStabilizingMessage, setShowStabilizingMessage] = React.useState(false);
   
   React.useEffect(() => {
-    if (!isLoading && isMapInitialized) {
+    if (!isLoading && isMapInitialized && !stabilizingMessageShown.current) {
+      stabilizingMessageShown.current = true;
       setShowStabilizingMessage(true);
       // Hide stabilizing message after 5 seconds
       const timer = setTimeout(() => {

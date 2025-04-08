@@ -22,8 +22,10 @@ export const useMapboxWrapper = (
   const lastDoctorsRef = useRef<Doctor[]>(doctors);
   const lastSelectedDoctorRef = useRef<Doctor | null>(selectedDoctor);
   
+  // Store onCriticalError in a ref to avoid dependency changes
   const onCriticalErrorRef = useRef<((error: string) => void) | null | undefined>(null);
   
+  // Only update the ref when the function changes
   useEffect(() => {
     onCriticalErrorRef.current = onCriticalError;
   }, [onCriticalError]);
@@ -34,31 +36,26 @@ export const useMapboxWrapper = (
     lastSelectedDoctorRef.current = selectedDoctor;
   }, [doctors, selectedDoctor]);
   
-  const handleMapInitialized = useCallback((mapInstance: any) => {
+  const handleMapInitialized = useCallback(() => {
     if (isMounted.current) {
-      console.log(`[${componentId}] Map initialized callback in MapboxWrapper with map`);
+      console.log(`[${componentId}] Map initialized callback in MapboxWrapper`);
       setIsLoading(false);
       errorRetryCount.current = 0;
       
       markersUpdatedRef.current = false;
       initialMarkersSet.current = false;
       
-      setTimeout(() => {
+      // Use a ref to prevent multiple toasts
+      const stabilizeTimerId = setTimeout(() => {
         if (isMounted.current) {
           console.log(`[${componentId}] Map stabilized after delay`);
           setMapStabilized(true);
-          
-          toast({
-            title: "Map Ready",
-            description: "The map has been loaded and is ready to show locations.",
-          });
         }
       }, 3000);
       
-      toast({
-        title: "Map Initialized",
-        description: "The map has been successfully loaded. Preparing locations...",
-      });
+      return () => {
+        clearTimeout(stabilizeTimerId);
+      };
     }
   }, [componentId]);
   
@@ -114,7 +111,7 @@ export const useMapboxWrapper = (
     componentId
   });
   
-  // Effect to set initial markers after map is stabilized
+  // Effect to set initial markers after map is stabilized - RUNS ONCE
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     
@@ -129,10 +126,6 @@ export const useMapboxWrapper = (
           markersUpdatedRef.current = true;
           try {
             updateMarkers(doctors, selectedDoctor);
-            toast({
-              title: "Locations Added",
-              description: `Added ${doctors.length} doctor locations to the map.`,
-            });
           } catch (error) {
             console.error(`[${componentId}] Error in initial marker update:`, error);
           }
@@ -143,66 +136,35 @@ export const useMapboxWrapper = (
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isMapInitialized, map, mapStabilized]); // Removed doctors and selectedDoctor from dependencies
+  }, [isMapInitialized, map, mapStabilized, componentId, updateMarkers]); 
   
-  // Optimized update markers function with debounce
-  const updateMarkersWithDebounce = useCallback(() => {
-    // Use ref values to avoid dependency changes
-    const currentDoctors = lastDoctorsRef.current;
-    const currentSelectedDoctor = lastSelectedDoctorRef.current;
-    
-    if (!markersUpdatedRef.current || !mapStabilized) {
+  // Update markers only when selection changes - USE A REF TO TRACK PREVIOUS VALUE
+  const previousSelectedDoctorId = useRef<string | null>(null);
+  
+  useEffect(() => {
+    // Skip initial run
+    if (!markersUpdatedRef.current || !mapStabilized || !map || !isMapInitialized) {
       return;
     }
     
-    if (updateMarkersTimeoutRef.current) {
-      clearTimeout(updateMarkersTimeoutRef.current);
-      updateMarkersTimeoutRef.current = null;
+    // Only update if selection actually changed
+    const currentSelectedId = selectedDoctor?.id || null;
+    if (previousSelectedDoctorId.current === currentSelectedId) {
+      return;
     }
     
-    if (isMapInitialized && map && currentDoctors.length > 0 && isMounted.current) {
-      console.log(`[${componentId}] Scheduling marker update for doctor/selection change`, { 
-        initialized: isMapInitialized, 
-        doctorsCount: currentDoctors.length,
-        selectedDoctor: currentSelectedDoctor?.id,
-        mapExists: !!map
-      });
-      
-      updateMarkersTimeoutRef.current = setTimeout(() => {
-        if (isMounted.current && map) {
-          console.log(`[${componentId}] Executing scheduled marker update`);
-          try {
-            updateMarkers(currentDoctors, currentSelectedDoctor);
-          } catch (error) {
-            console.error(`[${componentId}] Error updating markers:`, error);
-          }
-        } else {
-          console.log(`[${componentId}] Component unmounted or map not available, skipping marker update`);
-        }
-      }, 500);
-    } else {
-      console.log(`[${componentId}] Not updating markers due to conditions not met`, { 
-        initialized: isMapInitialized, 
-        doctorsCount: currentDoctors.length,
-        isMounted: isMounted.current,
-        mapExists: !!map
-      });
-    }
-  }, [isMapInitialized, map, componentId, mapStabilized, updateMarkers]); // Removed doctors and selectedDoctor
-  
-  // Update markers only when selection changes
-  useEffect(() => {
-    if (markersUpdatedRef.current && mapStabilized && map && isMapInitialized) {
-      updateMarkersWithDebounce();
-    }
+    // Update the ref
+    previousSelectedDoctorId.current = currentSelectedId;
     
-    return () => {
-      if (updateMarkersTimeoutRef.current) {
-        clearTimeout(updateMarkersTimeoutRef.current);
-        updateMarkersTimeoutRef.current = null;
+    // Don't debounce selection changes - they should be instant
+    if (isMounted.current) {
+      try {
+        updateMarkers(lastDoctorsRef.current, selectedDoctor);
+      } catch (error) {
+        console.error(`[${componentId}] Error updating markers:`, error);
       }
-    };
-  }, [selectedDoctor, updateMarkersWithDebounce, mapStabilized, map, isMapInitialized]);
+    }
+  }, [selectedDoctor, mapStabilized, map, isMapInitialized, componentId, updateMarkers]);
 
   useEffect(() => {
     console.log(`[${componentId}] MapboxWrapper mounted`);
@@ -218,10 +180,6 @@ export const useMapboxWrapper = (
       if (updateMarkersTimeoutRef.current) {
         clearTimeout(updateMarkersTimeoutRef.current);
         updateMarkersTimeoutRef.current = null;
-      }
-      
-      if (isCleanupInProgress()) {
-        console.log(`[${componentId}] Cleanup already in progress, skipping`);
       }
     };
   }, [componentId]);
