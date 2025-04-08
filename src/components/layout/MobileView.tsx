@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,7 +28,7 @@ const MobileView: React.FC<MobileViewProps> = ({
   return (
     <div className="h-full">
       {mobileView === 'list' && (
-        <div className="h-full">
+        <div className="h-full overflow-auto">
           {isLoading ? (
             <div className="p-4 space-y-4">
               {[...Array(5)].map((_, i) => (
