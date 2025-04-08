@@ -1,10 +1,10 @@
 
 import axios from 'axios';
 
-// Create an axios instance with default config
+// Create an axios instance with direct backend URL instead of relying on Vite proxy
 const apiClient = axios.create({
-    // Use a relative URL to leverage the Vite proxy
-    baseURL: '/api',
+    // Point directly to the backend server
+    baseURL: 'http://localhost:3001',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -80,9 +80,9 @@ apiClient.interceptors.response.use(
             console.warn('API Request was cancelled:', error.message);
         } else if (error.code === 'ERR_NETWORK') {
             console.error('Network error - this might be a CORS issue or backend connection:');
-            console.error('- Check that the Vite proxy is properly configured');
-            console.error('- Ensure your backend server is running on port 3001');
-            console.error('- Check for CORS headers in your backend responses');
+            console.error('- Check that the backend server is running on port 3001');
+            console.error('- Ensure your backend has CORS enabled with: Access-Control-Allow-Origin: *');
+            console.error('- Try running both frontend and backend on the same port if possible');
             console.error('- Full error:', error.message);
         } else if (error.code === 'ECONNABORTED') {
             console.error('Request timeout - backend server might be slow or unresponsive');
@@ -109,7 +109,7 @@ apiClient.interceptors.response.use(
 );
 
 // Test the connection to the backend when the module loads
-console.log('Testing connection to backend server at http://localhost:3001/api/health...');
+console.log('Testing direct connection to backend server at http://localhost:3001/health...');
 const connectionTest = () => {
     apiClient.get('/health')
         .then((response) => {
@@ -122,7 +122,11 @@ const connectionTest = () => {
                 console.warn('Check these common issues:');
                 console.warn('- Backend server is actually listening on port 3001');
                 console.warn('- Backend has CORS configured to allow requests from your frontend');
-                console.warn('- Backend has a /health endpoint accessible at /api/health');
+                console.warn('- Try adding these CORS headers to your backend:');
+                console.warn('  Access-Control-Allow-Origin: *');
+                console.warn('  Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
+                console.warn('  Access-Control-Allow-Headers: Content-Type,Authorization');
+                console.warn('  Access-Control-Allow-Credentials: true');
                 console.log('The app will function with fallback data if available.');
             } else {
                 console.warn('⚠️ Could not connect to backend server:', error.message);

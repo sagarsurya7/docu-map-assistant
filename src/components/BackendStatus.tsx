@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, RefreshCw, Info, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/api/apiClient';
 
@@ -8,6 +9,7 @@ const BackendStatus: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
   const [errorDetails, setErrorDetails] = useState<string>('');
   const [isConnectionIssue, setIsConnectionIssue] = useState<boolean>(false);
+  const [isCorsIssue, setIsCorsIssue] = useState<boolean>(false);
   const [checkingConnection, setCheckingConnection] = useState<boolean>(false);
   const [healthData, setHealthData] = useState<any>(null);
 
@@ -18,6 +20,7 @@ const BackendStatus: React.FC = () => {
       setStatus('connected');
       setErrorDetails('');
       setIsConnectionIssue(false);
+      setIsCorsIssue(false);
       
       // Store health data if available
       if (response.data) {
@@ -39,6 +42,11 @@ const BackendStatus: React.FC = () => {
           (error as any).code === 'ECONNABORTED'
         ) {
           setIsConnectionIssue(true);
+        }
+        
+        // Check for potential CORS issues
+        if (error.message.includes('CORS') || (error as any).code === 'ERR_NETWORK') {
+          setIsCorsIssue(true);
         }
       } else {
         setErrorDetails('Unknown error occurred');
@@ -92,6 +100,7 @@ const BackendStatus: React.FC = () => {
         <AlertTitle>Backend unavailable</AlertTitle>
         <AlertDescription>
           Cannot connect to the backend.
+          
           {isLovablePreview() && (
             <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-200">
               <strong>You're viewing the app in Lovable's preview environment:</strong>
@@ -108,14 +117,37 @@ const BackendStatus: React.FC = () => {
               <div className="mt-1">
                 <ul className="list-disc pl-4">
                   <li>Ensure your backend server is running on port 3001</li>
-                  <li>Check that the server has a <code>/api/health</code> endpoint</li>
-                  <li>The Vite proxy is configured to forward API requests to your backend</li>
+                  <li>Check that the server has a <code>/health</code> endpoint</li>
+                  <li>If your backend uses a different URL, update in apiClient.ts</li>
                 </ul>
               </div>
             </div>
           )}
           
-          {!isConnectionIssue && errorDetails && (
+          {isDevelopment() && isCorsIssue && (
+            <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-200">
+              <strong>Possible CORS Issue:</strong> Your backend might need CORS headers.
+              <div className="mt-1">
+                <p>Add these headers to your backend responses:</p>
+                <pre className="bg-white p-1 mt-1 rounded text-orange-800 overflow-auto">
+{`Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS
+Access-Control-Allow-Headers: Content-Type,Authorization
+Access-Control-Allow-Credentials: true`}
+                </pre>
+              </div>
+              <a 
+                href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center mt-2 text-blue-600 hover:underline"
+              >
+                Learn about CORS <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
+            </div>
+          )}
+          
+          {!isConnectionIssue && !isCorsIssue && errorDetails && (
             <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
               Error: {errorDetails}
             </div>
