@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Doctor } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
-import { getDoctorImage, getFallbackImage } from '../../utils/doctorImageUtils';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
 interface DoctorInfoCardProps {
   doctor: Doctor;
@@ -20,19 +21,33 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   onBookAppointment,
   className = ''
 }) => {
+  const [imgError, setImgError] = useState(false);
+  
   // Add a guard clause to prevent rendering if doctor is undefined
-  if (!doctor) {
+  if (!doctor || !doctor.name) {
+    console.warn("Invalid doctor data received in DoctorInfoCard");
     return null;
   }
   
   // Determine gender based on doctor's name prefix (Dr. usually followed by first name)
-  const isFemale = doctor.name && doctor.name.includes("Dr. ") && 
+  const isFemale = doctor.name.includes("Dr. ") && 
     ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
   
   const gender = isFemale ? 'female' : 'male';
   
-  // Use optional chaining to safely access doctor properties
-  const profileImage = doctor.imageUrl || (doctor.id ? getDoctorImage(doctor.id, gender) : getFallbackImage(gender));
+  // Use error state to determine which image to show
+  const profileImage = imgError
+    ? getFallbackImage(gender)
+    : (doctor.imageUrl || (doctor.id ? getDoctorImage(doctor.id, gender) : getFallbackImage(gender)));
+  
+  // Extract initials for avatar fallback
+  const getInitials = () => {
+    const nameParts = doctor.name.split(' ');
+    if (nameParts.length >= 2) {
+      return `${nameParts[0][0]}${nameParts[1][0]}`;
+    }
+    return doctor.name.substring(0, 2).toUpperCase();
+  };
   
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>
@@ -40,15 +55,14 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center">
             <div className="mr-3">
-              <img 
-                src={profileImage} 
-                alt={doctor.name} 
-                className="h-12 w-12 rounded-full object-cover" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = getFallbackImage(gender);
-                }}
-              />
+              <Avatar className="h-12 w-12">
+                <AvatarImage 
+                  src={profileImage}
+                  alt={doctor.name} 
+                  onError={() => setImgError(true)}
+                />
+                <AvatarFallback>{getInitials()}</AvatarFallback>
+              </Avatar>
             </div>
             <div>
               <CardTitle className="text-base">{doctor.name}</CardTitle>
