@@ -1,21 +1,21 @@
 
-// Collection of profile images for different genders
+// Collection of professional doctor profile images for different genders
 const femaleImages = [
-  "https://randomuser.me/api/portraits/women/5.jpg",
-  "https://randomuser.me/api/portraits/women/12.jpg",
-  "https://randomuser.me/api/portraits/women/22.jpg",
-  "https://randomuser.me/api/portraits/women/32.jpg",
-  "https://randomuser.me/api/portraits/women/44.jpg",
-  "https://randomuser.me/api/portraits/women/68.jpg",
+  "https://img.freepik.com/free-photo/woman-doctor-wearing-lab-coat-with-stethoscope-isolated_1303-29791.jpg",
+  "https://img.freepik.com/free-photo/front-view-covid-recovery-center-female-doctor-with-stethoscope_23-2148847896.jpg",
+  "https://img.freepik.com/free-photo/pleased-young-female-doctor-wearing-medical-robe-stethoscope-around-neck-standing-with-closed-posture_409827-254.jpg",
+  "https://img.freepik.com/free-photo/portrait-smiling-young-woman-doctor-healthcare-medical-worker-pointing-fingers-left-showing-clinic-advertisement_1258-88108.jpg",
+  "https://img.freepik.com/free-photo/doctor-with-his-arms-crossed-white-background_1368-5790.jpg",
+  "https://img.freepik.com/free-photo/woman-doctor-posing-against-blue-background_144627-60374.jpg",
 ];
 
 const maleImages = [
-  "https://randomuser.me/api/portraits/men/1.jpg", 
-  "https://randomuser.me/api/portraits/men/11.jpg",
-  "https://randomuser.me/api/portraits/men/22.jpg",
-  "https://randomuser.me/api/portraits/men/32.jpg",
-  "https://randomuser.me/api/portraits/men/45.jpg",
-  "https://randomuser.me/api/portraits/men/66.jpg",
+  "https://img.freepik.com/free-photo/portrait-smiling-male-doctor_171337-1532.jpg", 
+  "https://img.freepik.com/free-photo/pleased-young-male-doctor-wearing-medical-robe-stethoscope_409827-387.jpg",
+  "https://img.freepik.com/free-photo/doctor-with-his-arms-crossed-white-background_1368-5657.jpg",
+  "https://img.freepik.com/free-photo/portrait-successful-mid-adult-doctor-with-crossed-arms_1262-12865.jpg",
+  "https://img.freepik.com/free-photo/young-male-doctor-with-stethoscope-standing-hospital-corridor_651396-1235.jpg",
+  "https://img.freepik.com/free-photo/handsome-young-male-doctor-with-stethoscope-standing-against-blue-background_662251-388.jpg",
 ];
 
 // Get a consistent image based on doctor ID and gender
@@ -34,6 +34,6 @@ export const getDoctorImage = (doctorId: string, gender?: 'male' | 'female'): st
 // Fallback image if the main one fails to load
 export const getFallbackImage = (gender?: 'male' | 'female'): string => {
   return gender === 'female' 
-    ? "https://randomuser.me/api/portraits/women/0.jpg" 
-    : "https://randomuser.me/api/portraits/men/0.jpg";
+    ? "https://img.freepik.com/free-photo/medium-shot-smiley-doctor-with-coat_23-2149615762.jpg" 
+    : "https://img.freepik.com/free-photo/medium-shot-doctor-with-crossed-arms_23-2149613635.jpg";
 };
