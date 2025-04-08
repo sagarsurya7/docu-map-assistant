@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
@@ -48,6 +49,9 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
   const [cities, setCities] = useState<string[]>([]);
   const [areas, setAreas] = useState<string[]>([]);
   const { toast } = useToast();
+  
+  // Used to generate unique keys for doctors without IDs
+  const [uniqueKeyCounter, setUniqueKeyCounter] = useState(0);
   
   useEffect(() => {
     if (Array.isArray(initialDoctors)) {
@@ -105,6 +109,15 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
 
     return () => clearTimeout(timerId);
   }, [searchTerm, selectedSpecialty, selectedCity, selectedArea, toast]);
+
+  // Function to generate a unique key for each doctor
+  const getDoctorKey = (doctor: Doctor, index: number) => {
+    if (doctor.id) {
+      return `doctor-${doctor.id}`;
+    }
+    // For doctors without IDs, use a combination of index and counter to ensure uniqueness
+    return `doctor-no-id-${index}-${uniqueKeyCounter}`;
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -223,7 +236,13 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
         ) : (
           <div className="p-4 space-y-4">
             {doctors.map((doctor, index) => {
-              const doctorKey = doctor.id ? `doctor-${doctor.id}` : `doctor-index-${index}`;
+              const doctorKey = getDoctorKey(doctor, index);
+              
+              // Safety check to avoid rendering invalid doctor data
+              if (!doctor || !doctor.name) {
+                console.warn("Invalid doctor data in list");
+                return null;
+              }
               
               const isFemale = doctor.name.includes("Dr. ") && 
                 ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
