@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
@@ -223,7 +222,9 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
           </div>
         ) : (
           <div className="p-4 space-y-4">
-            {doctors.map((doctor) => {
+            {doctors.map((doctor, index) => {
+              const doctorKey = doctor.id ? `doctor-${doctor.id}` : `doctor-index-${index}`;
+              
               const isFemale = doctor.name.includes("Dr. ") && 
                 ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
               
@@ -231,7 +232,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
               
               return (
-                <div key={`doctor-${doctor.id}`}>
+                <div key={doctorKey}>
                   <Card 
                     className={`cursor-pointer hover:shadow-md transition-shadow duration-200 ${
                       selectedDoctor?.id === doctor.id ? 'border-medical border-2' : ''
