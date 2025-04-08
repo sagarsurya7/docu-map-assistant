@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
@@ -23,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { getDoctors, getFilterOptions } from '@/api/doctorService';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
 interface DoctorsListProps {
