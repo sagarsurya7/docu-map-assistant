@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
+import { MapPin, Star, MessageSquare, Calendar, User } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
@@ -34,7 +34,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
   
   const gender = isFemale ? 'female' : 'male';
   
-  // Try doctor's imageUrl first, then get one from our utility based on ID, finally use fallback
+  // Use a more reliable image selection approach
   const profileImage = imgError 
     ? getFallbackImage(gender) 
     : (doctor.imageUrl || getDoctorImage(doctor.id, gender));
@@ -42,8 +42,8 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
   // Extract first two initials for the avatar fallback
   const getInitials = () => {
     const nameParts = doctor.name.split(' ');
-    if (nameParts.length >= 2) {
-      return `${nameParts[0][0]}${nameParts[1][0]}`;
+    if (nameParts.length >= 2 && nameParts[0] && nameParts[1]) {
+      return `${nameParts[0][0] || ''}${nameParts[1][0] || ''}`.toUpperCase();
     }
     return doctor.name.substring(0, 2).toUpperCase();
   };
@@ -66,7 +66,9 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
                   alt={doctor.name} 
                   onError={() => setImgError(true)}
                 />
-                <AvatarFallback>{getInitials()}</AvatarFallback>
+                <AvatarFallback>
+                  <User className="h-5 w-5" />
+                </AvatarFallback>
               </Avatar>
             </div>
             <div>

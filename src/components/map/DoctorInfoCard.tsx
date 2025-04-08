@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Doctor } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
+import { MapPin, Star, MessageSquare, Calendar, User } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
@@ -35,19 +34,10 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   
   const gender = isFemale ? 'female' : 'male';
   
-  // Use error state to determine which image to show
+  // Use error state to determine which image to show, with safety checks
   const profileImage = imgError
     ? getFallbackImage(gender)
     : (doctor.imageUrl || (doctor.id ? getDoctorImage(doctor.id, gender) : getFallbackImage(gender)));
-  
-  // Extract initials for avatar fallback
-  const getInitials = () => {
-    const nameParts = doctor.name.split(' ');
-    if (nameParts.length >= 2) {
-      return `${nameParts[0][0]}${nameParts[1][0]}`;
-    }
-    return doctor.name.substring(0, 2).toUpperCase();
-  };
   
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>
@@ -61,7 +51,9 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
                   alt={doctor.name} 
                   onError={() => setImgError(true)}
                 />
-                <AvatarFallback>{getInitials()}</AvatarFallback>
+                <AvatarFallback>
+                  <User className="h-6 w-6" />
+                </AvatarFallback>
               </Avatar>
             </div>
             <div>
@@ -75,6 +67,7 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
           </div>
         </div>
       </CardHeader>
+      
       <CardContent className="pb-3 pt-0">
         <div className="flex items-start text-sm text-muted-foreground mb-2">
           <MapPin className="h-3.5 w-3.5 mr-1 mt-0.5 flex-shrink-0" />
@@ -119,6 +112,7 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
           </div>
         )}
       </CardContent>
+      
       <CardFooter className="pt-0 flex gap-2">
         <Button 
           size="sm" 

@@ -18,21 +18,28 @@ const maleImages = [
   "https://img.freepik.com/free-photo/handsome-young-male-doctor-with-stethoscope-standing-against-blue-background_662251-388.jpg",
 ];
 
-// Get a consistent image based on doctor ID and gender
-export const getDoctorImage = (doctorId: string, gender?: 'male' | 'female'): string => {
-  // Determine doctor gender if not provided (based on name prefix or ID hash)
-  const assumedGender = gender || (doctorId.charAt(0).toLowerCase() > 'm' ? 'female' : 'male');
+// Get a consistent image based on doctor ID and gender with error handling
+export const getDoctorImage = (doctorId?: string, gender: 'male' | 'female' = 'male'): string => {
+  // Safety check for doctorId
+  if (!doctorId) {
+    return gender === 'female' ? femaleImages[0] : maleImages[0];
+  }
   
-  // Use the doctor ID to consistently pick the same image from the array
-  const charSum = doctorId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const imageArray = assumedGender === 'female' ? femaleImages : maleImages;
-  const index = charSum % imageArray.length;
-  
-  return imageArray[index];
+  try {
+    // Use the doctor ID to consistently pick the same image from the array
+    const charSum = doctorId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const imageArray = gender === 'female' ? femaleImages : maleImages;
+    const index = charSum % imageArray.length;
+    
+    return imageArray[index];
+  } catch (error) {
+    console.error('Error in getDoctorImage:', error);
+    return gender === 'female' ? femaleImages[0] : maleImages[0];
+  }
 };
 
 // Fallback image if the main one fails to load
-export const getFallbackImage = (gender?: 'male' | 'female'): string => {
+export const getFallbackImage = (gender: 'male' | 'female' = 'male'): string => {
   return gender === 'female' 
     ? "https://img.freepik.com/free-photo/medium-shot-smiley-doctor-with-coat_23-2149615762.jpg" 
     : "https://img.freepik.com/free-photo/medium-shot-doctor-with-crossed-arms_23-2149613635.jpg";
