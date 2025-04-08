@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Doctor } from '../types';
 import { 
   Card, 
@@ -24,7 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { getDoctors, getFilterOptions } from '@/api/doctorService';
 import { useToast } from '@/hooks/use-toast';
-import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
+import { getDoctorImage, getFallbackImage, markImageAsFailed } from '@/utils/doctorImageUtils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface DoctorsListProps {
   doctors: Doctor[];
@@ -117,6 +119,12 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
     // For doctors without IDs, use a combination of index and counter to ensure uniqueness
     return `doctor-no-id-${index}-${uniqueKeyCounter}`;
   };
+
+  // Handle image error with memoization to avoid re-renders
+  const handleImageError = useCallback((doctorId?: string, gender: 'male' | 'female' = 'male') => {
+    // Mark the image as failed in our cache
+    markImageAsFailed(doctorId, gender);
+  }, []);
 
   return (
     <div className="h-full flex flex-col">
@@ -253,9 +261,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                   : 'male');
               
               // Get profile image with the doctor's ID and determined gender
-              // Use console.log to debug image selection
               const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
-              console.log(`Doctor ${doctor.id}: ${doctor.name}, Gender: ${gender}, Image: ${profileImage}`);
               
               return (
                 <div key={doctorKey}>
@@ -269,16 +275,16 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                       <div className="flex items-start justify-between">
                         <div className="flex items-center">
                           <div className="mr-3">
-                            <img 
-                              src={profileImage}
-                              alt={doctor.name} 
-                              className="h-10 w-10 rounded-full object-cover" 
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = getFallbackImage(gender);
-                                console.log(`Image error for ${doctor.id}, using fallback: ${getFallbackImage(gender)}`);
-                              }}
-                            />
+                            <Avatar>
+                              <AvatarImage
+                                src={profileImage}
+                                alt={doctor.name}
+                                onError={() => handleImageError(doctor.id, gender)}
+                              />
+                              <AvatarFallback>
+                                {doctor.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
                           </div>
                           <div>
                             <CardTitle className="text-base">{doctor.name}</CardTitle>

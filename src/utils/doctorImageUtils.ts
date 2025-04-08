@@ -18,11 +18,24 @@ const maleImages = [
   "https://img.freepik.com/free-photo/handsome-young-male-doctor-with-stethoscope-standing-against-blue-background_662251-388.jpg",
 ];
 
+// Fallback images with better reliability
+const fallbackFemaleImage = "https://img.freepik.com/free-photo/medium-shot-smiley-doctor-with-coat_23-2149615762.jpg";
+const fallbackMaleImage = "https://img.freepik.com/free-photo/medium-shot-doctor-with-crossed-arms_23-2149613635.jpg";
+
+// Cache previously successful image URLs to avoid re-requests for failed images
+const imageCache: Record<string, string> = {};
+
 // Get a consistent image based on doctor ID and gender with error handling
 export const getDoctorImage = (doctorId?: string, gender: 'male' | 'female' = 'male'): string => {
-  // Safety check for doctorId
+  // Check cache first to avoid repeated failures
+  const cacheKey = `${doctorId}-${gender}`;
+  if (imageCache[cacheKey]) {
+    return imageCache[cacheKey];
+  }
+  
+  // If no doctorId, return a fallback immediately
   if (!doctorId) {
-    return gender === 'female' ? femaleImages[0] : maleImages[0];
+    return gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
   }
   
   try {
@@ -31,16 +44,29 @@ export const getDoctorImage = (doctorId?: string, gender: 'male' | 'female' = 'm
     const imageArray = gender === 'female' ? femaleImages : maleImages;
     const index = charSum % imageArray.length;
     
-    return imageArray[index];
+    // Store in cache and return
+    const selectedImage = imageArray[index];
+    imageCache[cacheKey] = selectedImage;
+    return selectedImage;
   } catch (error) {
-    console.error('Error in getDoctorImage:', error);
-    return gender === 'female' ? femaleImages[0] : maleImages[0];
+    // Return fallback on any error
+    const fallbackImage = gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
+    imageCache[cacheKey] = fallbackImage; // Cache the fallback too
+    return fallbackImage;
   }
 };
 
 // Fallback image if the main one fails to load
 export const getFallbackImage = (gender: 'male' | 'female' = 'male'): string => {
-  return gender === 'female' 
-    ? "https://img.freepik.com/free-photo/medium-shot-smiley-doctor-with-coat_23-2149615762.jpg" 
-    : "https://img.freepik.com/free-photo/medium-shot-doctor-with-crossed-arms_23-2149613635.jpg";
+  return gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
 };
+
+// Mark a specific doctor image as failed in the cache
+export const markImageAsFailed = (doctorId?: string, gender: 'male' | 'female' = 'male'): void => {
+  if (!doctorId) return;
+  
+  const cacheKey = `${doctorId}-${gender}`;
+  const fallbackImage = gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
+  imageCache[cacheKey] = fallbackImage;
+};
+
