@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Doctor } from '@/types';
 import { 
   Card, 
@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, MessageSquare, Calendar, User } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
 import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
 interface DoctorCardProps {
@@ -21,8 +20,6 @@ interface DoctorCardProps {
 }
 
 const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect }) => {
-  const [imgError, setImgError] = useState(false);
-
   // Guard to prevent rendering issues with invalid doctor data
   if (!doctor || !doctor.name) {
     console.warn("Invalid doctor data received in DoctorCard");
@@ -35,18 +32,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
   const gender = isFemale ? 'female' : 'male';
   
   // Use a more reliable image selection approach
-  const profileImage = imgError 
-    ? getFallbackImage(gender) 
-    : (doctor.imageUrl || getDoctorImage(doctor.id, gender));
-
-  // Extract first two initials for the avatar fallback
-  const getInitials = () => {
-    const nameParts = doctor.name.split(' ');
-    if (nameParts.length >= 2 && nameParts[0] && nameParts[1]) {
-      return `${nameParts[0][0] || ''}${nameParts[1][0] || ''}`.toUpperCase();
-    }
-    return doctor.name.substring(0, 2).toUpperCase();
-  };
+  const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
   
   return (
     <Card 
@@ -60,16 +46,15 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
         <div className="flex items-start justify-between">
           <div className="flex items-center">
             <div className="mr-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage 
-                  src={profileImage}
-                  alt={doctor.name} 
-                  onError={() => setImgError(true)}
-                />
-                <AvatarFallback>
-                  <User className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
+              <img 
+                src={profileImage}
+                alt={doctor.name} 
+                className="h-10 w-10 rounded-full object-cover" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = getFallbackImage(gender);
+                }}
+              />
             </div>
             <div>
               <CardTitle className="text-base">{doctor.name}</CardTitle>

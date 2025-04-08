@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Doctor } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, MessageSquare, Calendar, User } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
 import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
 interface DoctorInfoCardProps {
@@ -20,8 +20,6 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   onBookAppointment,
   className = ''
 }) => {
-  const [imgError, setImgError] = useState(false);
-  
   // Add a guard clause to prevent rendering if doctor is undefined
   if (!doctor || !doctor.name) {
     console.warn("Invalid doctor data received in DoctorInfoCard");
@@ -35,9 +33,7 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   const gender = isFemale ? 'female' : 'male';
   
   // Use error state to determine which image to show, with safety checks
-  const profileImage = imgError
-    ? getFallbackImage(gender)
-    : (doctor.imageUrl || (doctor.id ? getDoctorImage(doctor.id, gender) : getFallbackImage(gender)));
+  const profileImage = doctor.imageUrl || (doctor.id ? getDoctorImage(doctor.id, gender) : getFallbackImage(gender));
   
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>
@@ -45,16 +41,15 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center">
             <div className="mr-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage 
-                  src={profileImage}
-                  alt={doctor.name} 
-                  onError={() => setImgError(true)}
-                />
-                <AvatarFallback>
-                  <User className="h-6 w-6" />
-                </AvatarFallback>
-              </Avatar>
+              <img 
+                src={profileImage}
+                alt={doctor.name} 
+                className="h-12 w-12 rounded-full object-cover" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = getFallbackImage(gender);
+                }}
+              />
             </div>
             <div>
               <CardTitle className="text-base">{doctor.name}</CardTitle>
