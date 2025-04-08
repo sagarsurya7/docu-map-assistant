@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, memo } from 'react';
 import MapStyles from './MapStyles';
 import LoadingIndicator from './LoadingIndicator';
 import MapError from './MapError';
@@ -25,8 +25,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
   onRetry
 }) => {
   // Show a toast notification when the map is initialized
-  React.useEffect(() => {
-    if (isMapInitialized && !isLoading) {
+  // Using a ref to track initial load to prevent multiple toasts
+  const initializedToastShown = React.useRef(false);
+  
+  useEffect(() => {
+    if (isMapInitialized && !isLoading && !initializedToastShown.current) {
+      initializedToastShown.current = true;
       toast({
         title: "Map Ready",
         description: "The map is now fully loaded and stable.",
@@ -47,6 +51,20 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [mapRef]);
 
+  // Loading message shown only once after map initialization
+  const [showStabilizingMessage, setShowStabilizingMessage] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (!isLoading && isMapInitialized) {
+      setShowStabilizingMessage(true);
+      // Hide stabilizing message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowStabilizingMessage(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isMapInitialized, isLoading]);
+
   return (
     <div className="h-full relative">
       <MapStyles />
@@ -59,7 +77,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         <>
           <div ref={mapContainerRef} className="h-full w-full mapbox-container"></div>
           {isLoading && <LoadingIndicator />}
-          {!isLoading && isMapInitialized && (
+          {showStabilizingMessage && (
             <div className="absolute top-4 left-4 bg-white/80 px-4 py-2 rounded-md shadow-md text-sm font-medium animate-pulse">
               Map is loading and stabilizing, locations will appear soon...
             </div>
@@ -76,4 +94,4 @@ const MapContainer: React.FC<MapContainerProps> = ({
   );
 };
 
-export default MapContainer;
+export default memo(MapContainer);

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Doctor } from '@/types';
 import MapboxWrapper from './map/MapboxWrapper';
 
@@ -22,8 +22,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   // Track if component is mounted
   const isMounted = useRef(true);
   
-  // Ensure doctors is always an array
-  const safeDoctors = Array.isArray(doctors) ? doctors : [];
+  // Memoize doctors array to prevent unnecessary re-renders
+  const safeDoctors = React.useMemo(() => {
+    return Array.isArray(doctors) ? doctors : [];
+  }, [doctors]);
   
   // Simplified useEffect with minimal cleanup
   useEffect(() => {
@@ -47,11 +49,13 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   }, []);
 
+  // Memoize the MapboxWrapper component to prevent unnecessary re-renders
+  const MemoizedMapboxWrapper = memo(MapboxWrapper);
+
   // Use a stable memo to prevent unnecessary rerenders of MapboxWrapper
-  // Only rerender when key props change
   return (
     <div className="h-full relative">
-      <MapboxWrapper
+      <MemoizedMapboxWrapper
         key={mapKey}
         doctors={safeDoctors}
         selectedDoctor={selectedDoctor}

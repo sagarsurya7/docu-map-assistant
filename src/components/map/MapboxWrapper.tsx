@@ -1,5 +1,4 @@
-
-import React, { useRef, memo } from 'react';
+import React, { useRef, memo, useEffect } from 'react';
 import { Doctor } from '@/types';
 import MapContainer from './MapContainer';
 import { useMapboxWrapper } from '@/hooks/mapbox/useMapboxWrapper';
@@ -19,11 +18,21 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
 }) => {
   // Create a stable identifier for this instance (using primitive string)
   const componentId = useRef(`mapbox-${Date.now().toString()}`).current;
+  const renderCountRef = useRef(0);
   
-  console.log(`[${componentId}] MapboxWrapper rendering`);
+  // Log render count for debugging
+  useEffect(() => {
+    renderCountRef.current += 1;
+    console.log(`[${componentId}] MapboxWrapper rendering #${renderCountRef.current}`);
+    return () => {
+      console.log(`[${componentId}] MapboxWrapper unmounting`);
+    };
+  });
 
   // Ensure doctors is an array
-  const validDoctors = Array.isArray(doctors) ? doctors : [];
+  const validDoctors = React.useMemo(() => {
+    return Array.isArray(doctors) ? doctors : [];
+  }, [doctors]);
   
   // Use the refactored hook for map functionality
   const {
@@ -33,8 +42,6 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     isMapInitialized,
     handleManualRetry
   } = useMapboxWrapper(validDoctors, selectedDoctor, onCriticalError, componentId);
-
-  console.log(`[${componentId}] MapboxWrapper rendering complete`);
 
   return (
     <MapContainer
@@ -48,5 +55,20 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   );
 };
 
-// Use React.memo to prevent unnecessary rerenders
-export default memo(MapboxWrapper);
+// Use React.memo with custom equality function to prevent unnecessary rerenders
+export default memo(MapboxWrapper, (prevProps, nextProps) => {
+  // Only re-render if selectedDoctor changes or doctors length/content changes
+  const selectedDoctorChanged = prevProps.selectedDoctor?.id !== nextProps.selectedDoctor?.id;
+  
+  // Check if doctors array length changed
+  const doctorsLengthChanged = 
+    (prevProps.doctors?.length || 0) !== (nextProps.doctors?.length || 0);
+  
+  // Skip deep comparison if length changed
+  if (selectedDoctorChanged || doctorsLengthChanged) {
+    return false; // Not equal, should re-render
+  }
+  
+  // Otherwise, consider props equal (skip re-render)
+  return true;
+});
