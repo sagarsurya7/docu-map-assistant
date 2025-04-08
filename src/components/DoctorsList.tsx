@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { 
@@ -245,7 +244,9 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               }
               
               // Determine gender based on name or use the gender field if available
-              const gender = doctor.gender || 
+              // Using type assertion to handle the optional gender property
+              const genderValue = doctor.gender as 'male' | 'female' | undefined;
+              const gender = genderValue || 
                 (doctor.name.includes("Dr. ") && 
                 ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name)) 
                   ? 'female' 
