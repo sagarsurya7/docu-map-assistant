@@ -20,17 +20,19 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   onBookAppointment,
   className = ''
 }) => {
-  // Determine gender based on doctor's name prefix (Dr. usually followed by first name)
-  const isFemale = doctor && doctor.name && doctor.name.includes("Dr. ") && 
-    ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
-  
-  const gender = isFemale ? 'female' : 'male';
-  const profileImage = doctor && doctor.imageUrl ? doctor.imageUrl : getDoctorImage(doctor?.id || '', gender);
-  
   // Add a guard clause to prevent rendering if doctor is undefined
   if (!doctor) {
     return null;
   }
+  
+  // Determine gender based on doctor's name prefix (Dr. usually followed by first name)
+  const isFemale = doctor.name && doctor.name.includes("Dr. ") && 
+    ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
+  
+  const gender = isFemale ? 'female' : 'male';
+  
+  // Use optional chaining to safely access doctor properties
+  const profileImage = doctor.imageUrl || (doctor.id ? getDoctorImage(doctor.id, gender) : getFallbackImage(gender));
   
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>
