@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
-import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
+import { getDoctorImage, getFallbackImage } from '../../utils/doctorImageUtils';
 
 interface DoctorInfoCardProps {
   doctor: Doctor;
