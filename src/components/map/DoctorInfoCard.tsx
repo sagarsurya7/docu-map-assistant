@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
-import { getDoctorImage, markImageAsFailed } from '@/utils/doctorImageUtils';
+import { getDoctorImage, getFallbackImage, markImageAsFailed } from '@/utils/doctorImageUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface DoctorInfoCardProps {
@@ -36,11 +36,13 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   
   // Use reliable image selection approach
   const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+  const fallbackImg = getFallbackImage(gender);
   
   // Handle image error with memoization to avoid re-renders
   const handleImageError = useCallback(() => {
+    console.log(`Image error for map card ${doctor.id}, using fallback: ${fallbackImg}`);
     markImageAsFailed(doctor.id, gender);
-  }, [doctor.id, gender]);
+  }, [doctor.id, gender, fallbackImg]);
   
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>

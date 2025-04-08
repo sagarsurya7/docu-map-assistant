@@ -251,7 +251,6 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               }
               
               // Determine gender based on name or use the gender field if available
-              // Using type assertion to handle the optional gender property
               const genderValue = doctor.gender as 'male' | 'female' | undefined;
               const gender = genderValue || 
                 (doctor.name.includes("Dr. ") && 
@@ -261,6 +260,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               
               // Get profile image with the doctor's ID and determined gender
               const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+              const fallbackImg = getFallbackImage(gender);
               
               return (
                 <div key={doctorKey}>

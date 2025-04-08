@@ -30,12 +30,15 @@ export const getDoctorImage = (doctorId?: string, gender: 'male' | 'female' = 'm
   // Check cache first to avoid repeated failures
   const cacheKey = `${doctorId}-${gender}`;
   if (imageCache[cacheKey]) {
+    console.log(`Using cached image for ${cacheKey}:`, imageCache[cacheKey]);
     return imageCache[cacheKey];
   }
   
   // If no doctorId, return a fallback immediately
   if (!doctorId) {
-    return gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
+    const fallback = gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
+    imageCache[cacheKey] = fallback; // Cache the fallback too
+    return fallback;
   }
   
   try {
@@ -67,5 +70,6 @@ export const markImageAsFailed = (doctorId?: string, gender: 'male' | 'female' =
   
   const cacheKey = `${doctorId}-${gender}`;
   const fallbackImage = gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
+  console.log(`Marking image as failed for ${cacheKey}, using fallback:`, fallbackImage);
   imageCache[cacheKey] = fallbackImage;
 };

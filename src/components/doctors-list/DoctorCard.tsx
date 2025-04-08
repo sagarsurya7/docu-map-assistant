@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
-import { getDoctorImage, markImageAsFailed } from '@/utils/doctorImageUtils';
+import { getDoctorImage, markImageAsFailed, getFallbackImage } from '@/utils/doctorImageUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface DoctorCardProps {
@@ -27,6 +27,7 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
     return null;
   }
   
+  // Determine gender based on name or use the gender field if available
   const genderValue = doctor.gender as 'male' | 'female' | undefined;
   const isFemale = genderValue === 'female' || (doctor.name.includes("Dr. ") && 
     ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name)));
@@ -35,11 +36,13 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, isSelected, onSelect })
   
   // Use a more reliable image selection approach
   const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+  const fallbackImg = getFallbackImage(gender);
   
   // Handle image error with memoization to avoid re-renders
   const handleImageError = useCallback(() => {
+    console.log(`Image error for ${doctor.id}, using fallback: ${fallbackImg}`);
     markImageAsFailed(doctor.id, gender);
-  }, [doctor.id, gender]);
+  }, [doctor.id, gender, fallbackImg]);
   
   return (
     <Card 
