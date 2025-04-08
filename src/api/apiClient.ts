@@ -10,9 +10,9 @@ const apiClient = axios.create({
         'Accept': 'application/json'
     },
     // Add a timeout to prevent hanging requests
-    timeout: 15000, // Increased timeout for slower connections
+    timeout: 30000, // Increased timeout for slower connections
     // Enable sending cookies with requests
-    withCredentials: false
+    withCredentials: true
 });
 
 // Add request interceptor for debugging
@@ -82,12 +82,13 @@ apiClient.interceptors.response.use(
             console.error('Network error - this might be a CORS issue or backend connection:');
             console.error('- Check that the Vite proxy is properly configured');
             console.error('- Ensure your backend server is running on port 3001');
+            console.error('- Check for CORS headers in your backend responses');
             console.error('- Full error:', error.message);
         } else if (error.code === 'ECONNABORTED') {
             console.error('Request timeout - backend server might be slow or unresponsive');
         } else if (!error.response) {
             // Network error or server not running
-            console.error('Network error or backend server not running. Please start the backend server on port 3001.');
+            console.error('Network error or backend server not running. Please check that your backend server is running on port 3001.');
             console.error('API Error Details:', {
                 message: error.message,
                 code: error.code,
@@ -111,10 +112,17 @@ apiClient.interceptors.response.use(
 console.log('Testing connection to backend server...');
 const connectionTest = () => {
     apiClient.get('/health')
-        .then(() => console.log('✅ Backend server connection successful'))
+        .then((response) => {
+            console.log('✅ Backend server connection successful');
+            console.log('Backend health data:', response.data);
+        })
         .catch(error => {
             if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
                 console.warn('⚠️ Connection issue detected. Make sure your backend server is running on port 3001.');
+                console.warn('Check these common issues:');
+                console.warn('- Backend server is actually listening on port 3001');
+                console.warn('- No firewall blocking the connection');
+                console.warn('- Backend has a /health endpoint');
                 console.log('The app will function with fallback data if available.');
             } else {
                 console.warn('⚠️ Could not connect to backend server:', error.message);
@@ -125,7 +133,7 @@ const connectionTest = () => {
 // Initial connection test
 connectionTest();
 
-// Re-test connection periodically
-setInterval(connectionTest, 60000); // Check every minute
+// Re-test connection every 2 minutes
+setInterval(connectionTest, 120000);
 
 export default apiClient;
