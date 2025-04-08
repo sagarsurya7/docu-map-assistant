@@ -244,11 +244,17 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 return null;
               }
               
-              const isFemale = doctor.name.includes("Dr. ") && 
-                ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
+              // Determine gender based on name or use the gender field if available
+              const gender = doctor.gender || 
+                (doctor.name.includes("Dr. ") && 
+                ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name)) 
+                  ? 'female' 
+                  : 'male');
               
-              const gender = isFemale ? 'female' : 'male';
+              // Get profile image with the doctor's ID and determined gender
+              // Use console.log to debug image selection
               const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+              console.log(`Doctor ${doctor.id}: ${doctor.name}, Gender: ${gender}, Image: ${profileImage}`);
               
               return (
                 <div key={doctorKey}>
@@ -269,6 +275,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = getFallbackImage(gender);
+                                console.log(`Image error for ${doctor.id}, using fallback: ${getFallbackImage(gender)}`);
                               }}
                             />
                           </div>
