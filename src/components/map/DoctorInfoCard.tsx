@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, MessageSquare, Calendar } from 'lucide-react';
+import { getDoctorImage, getFallbackImage } from '@/utils/doctorImageUtils';
 
 interface DoctorInfoCardProps {
   doctor: Doctor;
@@ -19,6 +20,13 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   onBookAppointment,
   className = ''
 }) => {
+  // Determine gender based on doctor's name prefix (Dr. usually followed by first name)
+  const isFemale = doctor.name.includes("Dr. ") && 
+    ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
+  
+  const gender = isFemale ? 'female' : 'male';
+  const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+  
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>
       <CardHeader className="pb-2">
@@ -26,12 +34,12 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
           <div className="flex items-center">
             <div className="mr-3">
               <img 
-                src={doctor.imageUrl || "https://randomuser.me/api/portraits/men/1.jpg"} 
+                src={profileImage} 
                 alt={doctor.name} 
                 className="h-12 w-12 rounded-full object-cover" 
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "https://randomuser.me/api/portraits/men/1.jpg";
+                  target.src = getFallbackImage(gender);
                 }}
               />
             </div>

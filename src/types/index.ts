@@ -9,6 +9,7 @@ export interface ChatMessage {
 export interface Doctor {
   id: string;
   name: string;
+  gender?: 'male' | 'female'; // Added gender property
   specialty: string;
   address: string;
   area: string;

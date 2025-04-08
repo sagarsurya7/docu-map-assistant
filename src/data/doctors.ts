@@ -51,6 +51,7 @@ export const doctors: Doctor[] = [
   {
     id: "1",
     name: "Dr. Rajesh Kumar",
+    gender: "male", // Added gender property
     specialty: "Cardiologist",
     address: "123, Shastri Nagar",
     area: "Kalyani Nagar",
@@ -86,6 +87,7 @@ export const doctors: Doctor[] = [
   {
     id: "2",
     name: "Dr. Priya Sharma",
+    gender: "female", // Added gender property
     specialty: "Neurologist",
     address: "456, Koregaon Park",
     area: "Koregaon Park",
@@ -121,6 +123,7 @@ export const doctors: Doctor[] = [
   {
     id: "3",
     name: "Dr. Amit Patel",
+    gender: "male", // Added gender property
     specialty: "Orthopedist",
     address: "789, Viman Nagar",
     area: "Viman Nagar",
@@ -156,6 +159,7 @@ export const doctors: Doctor[] = [
   {
     id: "4",
     name: "Dr. Meera Desai",
+    gender: "female", // Added gender property
     specialty: "Pediatrician",
     address: "321, Aundh",
     area: "Aundh",
@@ -191,6 +195,7 @@ export const doctors: Doctor[] = [
   {
     id: "5",
     name: "Dr. Suresh Verma",
+    gender: "male", // Added gender property
     specialty: "Dermatologist",
     address: "555, Baner",
     area: "Baner",
@@ -226,6 +231,7 @@ export const doctors: Doctor[] = [
   {
     id: "6",
     name: "Dr. Anjali Joshi",
+    gender: "female", // Added gender property
     specialty: "ENT Specialist",
     address: "777, Hinjewadi",
     area: "Hinjewadi",
@@ -261,6 +267,7 @@ export const doctors: Doctor[] = [
   {
     id: "7",
     name: "Dr. Rahul Mehta",
+    gender: "male", // Added gender property
     specialty: "Ophthalmologist",
     address: "888, Wakad",
     area: "Wakad",
@@ -296,6 +303,7 @@ export const doctors: Doctor[] = [
   {
     id: "8",
     name: "Dr. Neha Gupta",
+    gender: "female", // Added gender property
     specialty: "Psychiatrist",
     address: "999, Kharadi",
     area: "Kharadi",
