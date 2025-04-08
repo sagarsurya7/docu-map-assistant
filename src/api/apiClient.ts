@@ -10,8 +10,8 @@ const apiClient = axios.create({
         'Accept': 'application/json'
     },
     // Add a timeout to prevent hanging requests
-    timeout: 30000, // Increased timeout for slower connections
-    // Enable sending cookies with requests
+    timeout: 30000, // 30 seconds timeout
+    // Enable sending cookies with requests if needed
     withCredentials: true
 });
 
@@ -109,7 +109,7 @@ apiClient.interceptors.response.use(
 );
 
 // Test the connection to the backend when the module loads
-console.log('Testing connection to backend server...');
+console.log('Testing connection to backend server at http://localhost:3001/api/health...');
 const connectionTest = () => {
     apiClient.get('/health')
         .then((response) => {
@@ -121,8 +121,8 @@ const connectionTest = () => {
                 console.warn('⚠️ Connection issue detected. Make sure your backend server is running on port 3001.');
                 console.warn('Check these common issues:');
                 console.warn('- Backend server is actually listening on port 3001');
-                console.warn('- No firewall blocking the connection');
-                console.warn('- Backend has a /health endpoint');
+                console.warn('- Backend has CORS configured to allow requests from your frontend');
+                console.warn('- Backend has a /health endpoint accessible at /api/health');
                 console.log('The app will function with fallback data if available.');
             } else {
                 console.warn('⚠️ Could not connect to backend server:', error.message);
