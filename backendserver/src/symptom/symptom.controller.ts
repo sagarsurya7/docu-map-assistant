@@ -4,7 +4,7 @@ import { SymptomService } from './symptom.service';
 import { Symptom } from './schemas/symptom.schema';
 
 @ApiTags('Symptoms') // Groups APIs under "Symptoms" in Swagger
-@Controller('symptoms')
+@Controller('api/symptoms')
 export class SymptomController {
   constructor(private readonly symptomService: SymptomService) {}
 

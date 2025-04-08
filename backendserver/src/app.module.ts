@@ -11,5 +11,7 @@ import { DoctorModule } from './doctor/doctor.module';
     SymptomModule,
     DoctorModule,
   ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

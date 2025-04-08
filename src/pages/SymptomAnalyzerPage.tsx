@@ -22,7 +22,6 @@ const SymptomAnalyzerPage: React.FC = () => {
           </Button>
         </div>
 
-        <BackendStatus />
         
         <div className="grid grid-cols-1 gap-6 h-[calc(100vh-180px)]">
           <SymptomAnalyzer />

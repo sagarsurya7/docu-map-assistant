@@ -4,7 +4,7 @@ import { DoctorService } from './doctor.service';
 import { Doctor } from './schemas/doctor.schema';
 
 @ApiTags('Doctors') // Group API under "Doctors" in Swagger
-@Controller('doctors')
+@Controller('api/doctors')
 export class DoctorController {
   constructor(private readonly doctorService: DoctorService) {}
 

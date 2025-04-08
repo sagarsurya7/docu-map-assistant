@@ -63,7 +63,6 @@ const Index = () => {
         />
         
         <div className="container mx-auto px-4 py-2">
-          <BackendStatus />
           
           <div className="mb-3">
             <Button asChild>
