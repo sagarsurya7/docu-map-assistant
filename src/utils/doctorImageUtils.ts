@@ -69,4 +69,3 @@ export const markImageAsFailed = (doctorId?: string, gender: 'male' | 'female' =
   const fallbackImage = gender === 'female' ? fallbackFemaleImage : fallbackMaleImage;
   imageCache[cacheKey] = fallbackImage;
 };
-

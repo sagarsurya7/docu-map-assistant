@@ -4,7 +4,6 @@ import { Doctor } from '../types';
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
   CardFooter, 
   CardHeader, 
   CardTitle 
