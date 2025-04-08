@@ -21,11 +21,16 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   className = ''
 }) => {
   // Determine gender based on doctor's name prefix (Dr. usually followed by first name)
-  const isFemale = doctor.name.includes("Dr. ") && 
+  const isFemale = doctor && doctor.name && doctor.name.includes("Dr. ") && 
     ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name));
   
   const gender = isFemale ? 'female' : 'male';
-  const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+  const profileImage = doctor && doctor.imageUrl ? doctor.imageUrl : getDoctorImage(doctor?.id || '', gender);
+  
+  // Add a guard clause to prevent rendering if doctor is undefined
+  if (!doctor) {
+    return null;
+  }
   
   return (
     <Card className={`w-full max-w-sm shadow-lg ${className}`}>
