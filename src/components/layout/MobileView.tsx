@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, X } from 'lucide-react';
-import DoctorsList from '@/components/DoctorsList';
+import DoctorsList from '@/components/doctors-list/DoctorsList';
 import GoogleMap from '@/components/GoogleMap';
 import ChatBot from '@/components/ChatBot';
 import { Doctor } from '@/types';
