@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, memo } from 'react';
 import { Doctor } from '@/types';
 import MapboxWrapper from './map/MapboxWrapper';
 
@@ -17,40 +16,29 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const [mapError, setMapError] = useState<string | null>(null);
   
   // Use a stable primitive string key for the map instead of Date object
-  const [mapKey, setMapKey] = useState(() => Date.now().toString());
+  const mapKey = useRef(`map-${Date.now().toString()}`).current;
   
   // Track if component is mounted
   const isMounted = useRef(true);
   
-  // Simplified useEffect with minimal cleanup
-  useEffect(() => {
-    isMounted.current = true;
-    console.log("GoogleMap component mounted");
-    
-    return () => {
-      console.log("GoogleMap component ACTUAL unmount");
-      isMounted.current = false;
-    };
-  }, []);
-
-  // Handle critical errors by forcing a remount - use useCallback to stabilize
-  const handleCriticalError = useCallback((error: string) => {
+  // Safely memoize doctors array to prevent unnecessary re-renders
+  const safeDoctors = React.useMemo(() => {
+    return Array.isArray(doctors) ? doctors : [];
+  }, [doctors]);
+  
+  // Handle critical errors
+  const handleCriticalError = React.useCallback((error: string) => {
     if (isMounted.current) {
-      console.error(`Critical map error: ${error}. Forcing remount.`);
+      console.error(`Critical map error: ${error}`);
       setMapError(error);
-      
-      // Create new primitive string key (never use Date objects directly)
-      setMapKey(Date.now().toString());
     }
   }, []);
 
-  // Use a stable memo to prevent unnecessary rerenders of MapboxWrapper
-  // Only rerender when key props change
   return (
     <div className="h-full relative">
       <MapboxWrapper
         key={mapKey}
-        doctors={doctors}
+        doctors={safeDoctors}
         selectedDoctor={selectedDoctor}
         onSelectDoctor={onSelectDoctor}
         onCriticalError={handleCriticalError}
@@ -59,4 +47,11 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   );
 };
 
-export default React.memo(GoogleMap);
+// Use memo with custom comparison to prevent unnecessary re-renders
+export default memo(GoogleMap, (prev, next) => {
+  // Only re-render if selectedDoctor changes or doctors length changes
+  return (
+    prev.selectedDoctor?.id === next.selectedDoctor?.id &&
+    (prev.doctors?.length || 0) === (next.doctors?.length || 0)
+  );
+});

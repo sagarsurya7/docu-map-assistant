@@ -21,8 +21,11 @@ export const useMarkerUpdater = (
   
   // Function to update markers
   const updateMarkers = useCallback((doctors: Doctor[], selectedDoctor: Doctor | null) => {
+    // Ensure doctors is always an array
+    const safeDoctors = Array.isArray(doctors) ? doctors : [];
+    
     // Store the current doctors and selected doctor for retry logic
-    lastDoctorsRef.current = doctors;
+    lastDoctorsRef.current = safeDoctors;
     lastSelectedDoctorRef.current = selectedDoctor;
     
     // Prevent concurrent updates which may cause issues
@@ -57,31 +60,49 @@ export const useMarkerUpdater = (
     updateInProgress.current = true;
     
     try {
-      // Clear existing markers and popups
+      // Clear existing markers and popups first
       cleanupMarkers();
       
       // Collect new markers
       const newMarkers: any[] = [];
       
       // Only add markers if doctors exist and map is valid
-      if (doctors.length > 0 && isMapValid(map)) {
-        console.log(`Adding ${doctors.length} markers to map`);
+      if (safeDoctors.length > 0 && isMapValid(map)) {
+        console.log(`Adding ${safeDoctors.length} markers to map, selected doctor: ${selectedDoctor?.id || 'none'}`);
         
-        doctors.forEach(doctor => {
-          const isSelected = selectedDoctor?.id === doctor.id;
-          
-          // Create marker and add to collection
-          const marker = createDoctorMarker(doctor, isSelected, map, addPopup);
-          if (marker) {
-            newMarkers.push(marker);
-            console.log(`Successfully added marker for doctor ${doctor.id}`);
-          }
-          
-          // Show popup for selected doctor
-          if (isSelected && isMapValid(map)) {
-            flyToSelectedDoctor(doctor, map);
-          }
-        });
+        // First add non-selected doctors so selected one appears on top
+        [...safeDoctors]
+          .sort((a, b) => {
+            // Sort so selected doctor is processed last (appears on top)
+            if (a.id === selectedDoctor?.id) return 1;
+            if (b.id === selectedDoctor?.id) return -1;
+            return 0;
+          })
+          .forEach(doctor => {
+            // Skip invalid doctor data
+            if (!doctor || typeof doctor !== 'object' || !doctor.id) {
+              console.warn("Invalid doctor object skipped", doctor);
+              return;
+            }
+            
+            const isSelected = selectedDoctor?.id === doctor.id;
+            
+            // Create marker and add to collection
+            const marker = createDoctorMarker(doctor, isSelected, map, addPopup);
+            if (marker) {
+              newMarkers.push(marker);
+              console.log(`Successfully added ${isSelected ? 'blue' : 'red'} marker for doctor ${doctor.id}`);
+            }
+          });
+        
+        // Fly to selected doctor after all markers are added
+        if (selectedDoctor && isMapValid(map)) {
+          setTimeout(() => {
+            if (isMapValid(map) && mountedRef.current) {
+              flyToSelectedDoctor(selectedDoctor, map);
+            }
+          }, 50);
+        }
       }
       
       if (mountedRef.current) {

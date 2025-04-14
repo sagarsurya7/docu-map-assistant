@@ -1,125 +1,372 @@
 
 import { Doctor } from '../types';
 
+// List of Pune areas for autocomplete
+export const puneAreas = [
+  "Kalyani Nagar",
+  "Koregaon Park",
+  "Viman Nagar",
+  "Aundh",
+  "Baner",
+  "Hinjewadi",
+  "Wakad",
+  "Kharadi",
+  "Magarpatta",
+  "Hadapsar",
+  "Kondhwa",
+  "Bibwewadi",
+  "Katraj",
+  "Swargate",
+  "Deccan",
+  "Shivaji Nagar",
+  "Camp"
+];
+
+// List of medical specialties
+export const specialties = [
+  "Cardiologist",
+  "Neurologist",
+  "Orthopedist",
+  "Pediatrician",
+  "Dermatologist",
+  "ENT Specialist",
+  "Ophthalmologist",
+  "Psychiatrist",
+  "Dentist",
+  "General Physician",
+  "Gynecologist",
+  "Urologist",
+  "Endocrinologist",
+  "Pulmonologist",
+  "Gastroenterologist",
+  "Oncologist",
+  "Radiologist",
+  "Surgeon",
+  "Physiotherapist",
+  "Nutritionist"
+];
+
+// Sample doctors data (modified to match the expected types)
 export const doctors: Doctor[] = [
   {
-    id: 1,
-    name: "Dr. Rajesh Sharma",
+    id: "1",
+    name: "Dr. Rajesh Kumar",
     specialty: "Cardiologist",
-    address: "123 MG Road, Pune, India 411001",
-    location: {
-      lat: 18.5204,
-      lng: 73.8567
-    },
+    address: "123, Shastri Nagar",
+    area: "Kalyani Nagar",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
     rating: 4.8,
-    reviews: 126,
-    description: "Specialist in cardiovascular health with over 15 years of experience.",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-    available: true
-  },
-  {
-    id: 2,
-    name: "Dr. Priya Patel",
-    specialty: "Pediatrician",
-    address: "456 FC Road, Pune, India 411005",
-    location: {
-      lat: 18.5281,
-      lng: 73.8414
-    },
-    rating: 4.7,
-    reviews: 98,
-    description: "Child healthcare specialist with expertise in childhood development.",
-    image: "https://randomuser.me/api/portraits/women/2.jpg",
-    available: true
-  },
-  {
-    id: 3,
-    name: "Dr. Vikram Desai",
-    specialty: "Orthopedic Surgeon",
-    address: "789 Baner Road, Pune, India 411045",
-    location: {
-      lat: 18.5642,
-      lng: 73.7769
-    },
-    rating: 4.5,
-    reviews: 87,
-    description: "Specializes in bone and joint treatments and surgical procedures.",
-    image: "https://randomuser.me/api/portraits/men/3.jpg",
-    available: false
-  },
-  {
-    id: 4,
-    name: "Dr. Sunita Joshi",
-    specialty: "Dermatologist",
-    address: "234 Koregaon Park, Pune, India 411001",
-    location: {
-      lat: 18.5362,
-      lng: 73.8932
-    },
-    rating: 4.9,
-    reviews: 143,
-    description: "Expert in skin conditions and cosmetic dermatology.",
-    image: "https://randomuser.me/api/portraits/women/4.jpg",
-    available: true
-  },
-  {
-    id: 5,
-    name: "Dr. Amit Agarwal",
-    specialty: "Neurologist",
-    address: "567 Kalyani Nagar, Pune, India 411006",
+    experience: 15,
+    languages: ["Hindi", "English", "Marathi"],
+    education: [
+      "MBBS - BJ Medical College, Pune",
+      "MD - Cardiology, AIIMS Delhi",
+      "DM - Cardiology, AIIMS Delhi"
+    ],
+    available: true,
+    consultationFee: 1500,
+    imageUrl: "https://example.com/doctor1.jpg",
     location: {
       lat: 18.5489,
       lng: 73.9089
     },
-    rating: 4.6,
-    reviews: 112,
-    description: "Specializing in disorders of the nervous system including brain and spinal cord.",
-    image: "https://randomuser.me/api/portraits/men/5.jpg",
-    available: true
+    reviews: [],
+    availability: {
+      Monday: { morning: true, afternoon: true, evening: false },
+      Tuesday: { morning: true, afternoon: true, evening: false },
+      Wednesday: { morning: true, afternoon: true, evening: false },
+      Thursday: { morning: true, afternoon: true, evening: false },
+      Friday: { morning: true, afternoon: true, evening: false },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
   },
   {
-    id: 6,
-    name: "Dr. Meera Shah",
-    specialty: "Gynecologist",
-    address: "890 Aundh, Pune, India 411007",
+    id: "2",
+    name: "Dr. Priya Sharma",
+    specialty: "Neurologist",
+    address: "456, Koregaon Park",
+    area: "Koregaon Park",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
+    rating: 4.9,
+    experience: 12,
+    languages: ["Hindi", "English", "Marathi"],
+    education: [
+      "MBBS - Grant Medical College, Mumbai",
+      "MD - Neurology, NIMHANS Bangalore",
+      "DM - Neurology, NIMHANS Bangalore"
+    ],
+    available: true,
+    consultationFee: 2000,
+    imageUrl: "https://example.com/doctor2.jpg",
+    location: {
+      lat: 18.5362,
+      lng: 73.8932
+    },
+    reviews: [],
+    availability: {
+      Monday: { morning: true, afternoon: false, evening: true },
+      Tuesday: { morning: true, afternoon: false, evening: true },
+      Wednesday: { morning: true, afternoon: false, evening: true },
+      Thursday: { morning: true, afternoon: false, evening: true },
+      Friday: { morning: true, afternoon: false, evening: true },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
+  },
+  {
+    id: "3",
+    name: "Dr. Amit Patel",
+    specialty: "Orthopedist",
+    address: "789, Viman Nagar",
+    area: "Viman Nagar",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
+    rating: 4.7,
+    experience: 10,
+    languages: ["Hindi", "English", "Gujarati"],
+    education: [
+      "MBBS - GMC, Mumbai",
+      "MS - Orthopedics, JJ Hospital, Mumbai",
+      "MCh - Orthopedics, AIIMS Delhi"
+    ],
+    available: true,
+    consultationFee: 1800,
+    imageUrl: "https://example.com/doctor3.jpg",
+    location: {
+      lat: 18.5642,
+      lng: 73.7769
+    },
+    reviews: [],
+    availability: {
+      Monday: { morning: false, afternoon: true, evening: true },
+      Tuesday: { morning: false, afternoon: true, evening: true },
+      Wednesday: { morning: false, afternoon: true, evening: true },
+      Thursday: { morning: false, afternoon: true, evening: true },
+      Friday: { morning: false, afternoon: true, evening: true },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
+  },
+  {
+    id: "4",
+    name: "Dr. Meera Desai",
+    specialty: "Pediatrician",
+    address: "321, Aundh",
+    area: "Aundh",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
+    rating: 4.9,
+    experience: 8,
+    languages: ["Hindi", "English", "Marathi", "Gujarati"],
+    education: [
+      "MBBS - BJ Medical College, Pune",
+      "MD - Pediatrics, AIIMS Delhi",
+      "Fellowship in Pediatric Emergency, UK"
+    ],
+    available: true,
+    consultationFee: 1200,
+    imageUrl: "https://example.com/doctor4.jpg",
+    location: {
+      lat: 18.5204,
+      lng: 73.8567
+    },
+    reviews: [],
+    availability: {
+      Monday: { morning: true, afternoon: true, evening: false },
+      Tuesday: { morning: true, afternoon: true, evening: false },
+      Wednesday: { morning: true, afternoon: true, evening: false },
+      Thursday: { morning: true, afternoon: true, evening: false },
+      Friday: { morning: true, afternoon: true, evening: false },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
+  },
+  {
+    id: "5",
+    name: "Dr. Suresh Verma",
+    specialty: "Dermatologist",
+    address: "555, Baner",
+    area: "Baner",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
+    rating: 4.6,
+    experience: 15,
+    languages: ["Hindi", "English", "Marathi"],
+    education: [
+      "MBBS - GMC, Mumbai",
+      "MD - Dermatology, AIIMS Delhi",
+      "Fellowship in Cosmetic Dermatology, USA"
+    ],
+    available: true,
+    consultationFee: 1600,
+    imageUrl: "https://example.com/doctor5.jpg",
     location: {
       lat: 18.5679,
       lng: 73.8077
     },
-    rating: 4.8,
-    reviews: 156,
-    description: "Women's health specialist with focus on reproductive health.",
-    image: "https://randomuser.me/api/portraits/women/6.jpg",
-    available: true
+    reviews: [],
+    availability: {
+      Monday: { morning: false, afternoon: true, evening: true },
+      Tuesday: { morning: false, afternoon: true, evening: true },
+      Wednesday: { morning: false, afternoon: true, evening: true },
+      Thursday: { morning: false, afternoon: true, evening: true },
+      Friday: { morning: false, afternoon: true, evening: true },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
   },
   {
-    id: 7,
-    name: "Dr. Kunal Mehta",
-    specialty: "Psychiatrist",
-    address: "432 Viman Nagar, Pune, India 411014",
-    location: {
-      lat: 18.5679,
-      lng: 73.9143
-    },
+    id: "6",
+    name: "Dr. Anjali Joshi",
+    specialty: "ENT Specialist",
+    address: "777, Hinjewadi",
+    area: "Hinjewadi",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
     rating: 4.7,
-    reviews: 89,
-    description: "Mental health specialist trained in diagnosis and treatment of mental illness.",
-    image: "https://randomuser.me/api/portraits/men/7.jpg",
-    available: false
+    experience: 11,
+    languages: ["Hindi", "English", "Marathi"],
+    education: [
+      "MBBS - BJ Medical College, Pune",
+      "MS - ENT, AIIMS Delhi",
+      "Fellowship in Head and Neck Surgery, UK"
+    ],
+    available: true,
+    consultationFee: 1400,
+    imageUrl: "https://example.com/doctor6.jpg",
+    location: {
+      lat: 18.5281,
+      lng: 73.8414
+    },
+    reviews: [],
+    availability: {
+      Monday: { morning: true, afternoon: false, evening: true },
+      Tuesday: { morning: true, afternoon: false, evening: true },
+      Wednesday: { morning: true, afternoon: false, evening: true },
+      Thursday: { morning: true, afternoon: false, evening: true },
+      Friday: { morning: true, afternoon: false, evening: true },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
   },
   {
-    id: 8,
-    name: "Dr. Ananya Singh",
-    specialty: "Endocrinologist",
-    address: "765 Hadapsar, Pune, India 411028",
+    id: "7",
+    name: "Dr. Rahul Mehta",
+    specialty: "Ophthalmologist",
+    address: "888, Wakad",
+    area: "Wakad",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
+    rating: 4.8,
+    experience: 13,
+    languages: ["Hindi", "English", "Marathi", "Gujarati"],
+    education: [
+      "MBBS - GMC, Mumbai",
+      "MS - Ophthalmology, AIIMS Delhi",
+      "Fellowship in Retina, USA"
+    ],
+    available: true,
+    consultationFee: 1700,
+    imageUrl: "https://example.com/doctor7.jpg",
     location: {
       lat: 18.5089,
       lng: 73.9260
     },
-    rating: 4.5,
-    reviews: 76,
-    description: "Specialist in hormonal imbalances and related diseases.",
-    image: "https://randomuser.me/api/portraits/women/8.jpg",
-    available: true
+    reviews: [],
+    availability: {
+      Monday: { morning: true, afternoon: true, evening: false },
+      Tuesday: { morning: true, afternoon: true, evening: false },
+      Wednesday: { morning: true, afternoon: true, evening: false },
+      Thursday: { morning: true, afternoon: true, evening: false },
+      Friday: { morning: true, afternoon: true, evening: false },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
+  },
+  {
+    id: "8",
+    name: "Dr. Neha Gupta",
+    specialty: "Psychiatrist",
+    address: "999, Kharadi",
+    area: "Kharadi",
+    city: "Pune",
+    state: "Maharashtra",
+    country: "India",
+    rating: 4.9,
+    experience: 9,
+    languages: ["Hindi", "English", "Marathi"],
+    education: [
+      "MBBS - BJ Medical College, Pune",
+      "MD - Psychiatry, NIMHANS Bangalore",
+      "Fellowship in Child Psychiatry, UK"
+    ],
+    available: true,
+    consultationFee: 2000,
+    imageUrl: "https://example.com/doctor8.jpg",
+    location: {
+      lat: 18.5679,
+      lng: 73.9143
+    },
+    reviews: [],
+    availability: {
+      Monday: { morning: false, afternoon: true, evening: true },
+      Tuesday: { morning: false, afternoon: true, evening: true },
+      Wednesday: { morning: false, afternoon: true, evening: true },
+      Thursday: { morning: false, afternoon: true, evening: true },
+      Friday: { morning: false, afternoon: true, evening: true },
+      Saturday: { morning: true, afternoon: false, evening: false },
+      Sunday: { morning: false, afternoon: false, evening: false }
+    }
   }
 ];
+
+// Search helper functions
+export function searchDoctors(query: string): Doctor[] {
+  const searchTerm = query.toLowerCase();
+  return doctors.filter(doctor => 
+    doctor.name.toLowerCase().includes(searchTerm) ||
+    doctor.specialty.toLowerCase().includes(searchTerm) ||
+    doctor.area.toLowerCase().includes(searchTerm) ||
+    doctor.city.toLowerCase().includes(searchTerm)
+  );
+}
+
+export function filterDoctors(filters: {
+  specialty?: string;
+  city?: string;
+  area?: string;
+  rating?: number;
+  available?: boolean;
+}): Doctor[] {
+  return doctors.filter(doctor => {
+    if (filters.specialty && doctor.specialty !== filters.specialty) return false;
+    if (filters.city && doctor.city !== filters.city) return false;
+    if (filters.area && doctor.area !== filters.area) return false;
+    if (filters.rating && doctor.rating < filters.rating) return false;
+    if (filters.available !== undefined && doctor.available !== filters.available) return false;
+    return true;
+  });
+}
+
+// Get unique values for filters
+export function getUniqueSpecialties(): string[] {
+  return [...new Set(doctors.map(doctor => doctor.specialty))];
+}
+
+export function getUniqueCities(): string[] {
+  return [...new Set(doctors.map(doctor => doctor.city))];
+}
+
+export function getUniqueAreas(): string[] {
+  return [...new Set(doctors.map(doctor => doctor.area))];
+}

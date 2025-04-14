@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -28,27 +28,14 @@ const DesktopView: React.FC<DesktopViewProps> = ({
   toggleChatBot,
   toggleDoctorsList
 }) => {
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>(allDoctors);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const handleSearchDoctors = (term: string) => {
-    setSearchTerm(term);
-    const filtered = allDoctors.filter(doctor => 
-      doctor.name.toLowerCase().includes(term) ||
-      doctor.specialty.toLowerCase().includes(term) ||
-      doctor.address.toLowerCase().includes(term)
-    );
-    setFilteredDoctors(filtered);
-  };
-
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex overflow-hidden h-full">
       {/* Left Panel: Doctors List */}
       <div className={`bg-white ${showDoctorsList ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-r h-full`}>
         {showDoctorsList && (
           <>
             {isLoading ? (
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 overflow-auto h-full">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="space-y-2">
                     <div className="flex items-center space-x-4">
@@ -67,12 +54,11 @@ const DesktopView: React.FC<DesktopViewProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="h-full">
+              <div className="h-full overflow-auto">
                 <DoctorsList 
-                  doctors={filteredDoctors} 
+                  doctors={allDoctors} 
                   selectedDoctor={selectedDoctor} 
-                  onSelectDoctor={onSelectDoctor}
-                  searchTerm={searchTerm}
+                  onSelectDoctor={onSelectDoctor} 
                 />
               </div>
             )}
@@ -99,7 +85,7 @@ const DesktopView: React.FC<DesktopViewProps> = ({
       </div>
       
       {/* Middle Panel: Google Map */}
-      <div className={`${showDoctorsList && showChatBot ? 'w-2/4' : (showDoctorsList || showChatBot ? 'w-3/4' : 'w-full')} transition-width duration-300`}>
+      <div className={`${showDoctorsList && showChatBot ? 'w-2/4' : (showDoctorsList || showChatBot ? 'w-3/4' : 'w-full')} transition-width duration-300 h-full`}>
         {isLoading ? (
           <div className="h-full bg-slate-100 flex items-center justify-center">
             <div className="text-center">
@@ -112,7 +98,7 @@ const DesktopView: React.FC<DesktopViewProps> = ({
           </div>
         ) : (
           <GoogleMap 
-            doctors={filteredDoctors} 
+            doctors={allDoctors} 
             selectedDoctor={selectedDoctor}
             onSelectDoctor={onSelectDoctor} 
           />
@@ -120,13 +106,12 @@ const DesktopView: React.FC<DesktopViewProps> = ({
       </div>
       
       {/* Right Panel: Chat Bot */}
-      <div className={`bg-white ${showChatBot ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-l`}>
+      <div className={`bg-white ${showChatBot ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-l h-full`}>
         {showChatBot && (
           <>
-            <ChatBot 
-              doctors={allDoctors}
-              onSearchDoctors={handleSearchDoctors}
-            />
+            <div className="h-full overflow-hidden">
+              <ChatBot />
+            </div>
             
             <Button 
               className="absolute left-[-16px] top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full bg-white shadow-md z-10 p-0"

@@ -3,37 +3,42 @@ import React from 'react';
 
 const MapStyles: React.FC = () => {
   return (
-    <style>
-      {`
-        .selected-marker {
-          animation: bounce 1s infinite alternate;
-        }
-        
-        @keyframes bounce {
-          from { transform: translateY(0); }
-          to { transform: translateY(-10px); }
-        }
-        
-        /* Ensure map container takes full height */
-        .mapbox-container {
-          height: 100%;
-          width: 100%;
-        }
-        
-        /* Style the mapbox controls */
-        .mapboxgl-ctrl-top-right {
-          margin-top: 10px;
-          margin-right: 10px;
-        }
-        
-        /* Style the popups */
-        .mapboxgl-popup-content {
-          padding: 10px;
-          border-radius: 6px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-      `}
-    </style>
+    <style>{`
+      .mapbox-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+      }
+      
+      .marker {
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        z-index: 1;
+      }
+      
+      .selected-marker {
+        z-index: 10 !important;
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3));
+      }
+      
+      /* Override mapbox's z-index to ensure markers are always visible */
+      .mapboxgl-marker {
+        z-index: 5 !important;
+      }
+      
+      .mapboxgl-marker.selected-marker {
+        z-index: 10 !important;
+      }
+      
+      /* Make popups appear above markers */
+      .mapboxgl-popup {
+        z-index: 20 !important;
+      }
+    `}</style>
   );
 };
 
