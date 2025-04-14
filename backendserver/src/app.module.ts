@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SymptomModule } from './symptom/symptom.module';
 import { DoctorModule } from './doctor/doctor.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { DoctorModule } from './doctor/doctor.module';
     MongooseModule.forRoot('mongodb://127.0.0.1:27017/symptom-analyzer'),
     SymptomModule,
     DoctorModule,
+    ChatbotModule
   ],
   controllers: [],
   providers: [],
