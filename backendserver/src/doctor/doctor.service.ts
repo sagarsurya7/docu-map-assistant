@@ -9,11 +9,14 @@ export class DoctorService {
 
   // Existing function: Find doctors by specialties, sorted by rating and experience
   async findBySpecialties(specialties: string[]) {
+    const regexSpecialties = specialties.map(s => new RegExp(`^${s}$`, 'i')); // i = case-insensitive
+  
     return this.doctorModel
-      .find({ specialty: { $in: specialties } })
+      .find({ specialty: { $in: regexSpecialties } })
       .sort({ rating: -1, experience: -1 })
       .exec();
   }
+  
 
   // Get all doctors
   async findAll(): Promise<Doctor[]> {
