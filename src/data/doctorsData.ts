@@ -1,60 +1,12 @@
 
 import { Doctor } from '../types';
-import { doctors } from './doctorsData';
-import { puneAreas } from './locations';
-import { specialties } from './specialties';
-import { searchDoctors, filterDoctors } from './doctorsSearch';
 
-// List of Pune areas for autocomplete
-export const puneAreas = [
-  "Kalyani Nagar",
-  "Koregaon Park",
-  "Viman Nagar",
-  "Aundh",
-  "Baner",
-  "Hinjewadi",
-  "Wakad",
-  "Kharadi",
-  "Magarpatta",
-  "Hadapsar",
-  "Kondhwa",
-  "Bibwewadi",
-  "Katraj",
-  "Swargate",
-  "Deccan",
-  "Shivaji Nagar",
-  "Camp"
-];
-
-// List of medical specialties
-export const specialties = [
-  "Cardiologist",
-  "Neurologist",
-  "Orthopedist",
-  "Pediatrician",
-  "Dermatologist",
-  "ENT Specialist",
-  "Ophthalmologist",
-  "Psychiatrist",
-  "Dentist",
-  "General Physician",
-  "Gynecologist",
-  "Urologist",
-  "Endocrinologist",
-  "Pulmonologist",
-  "Gastroenterologist",
-  "Oncologist",
-  "Radiologist",
-  "Surgeon",
-  "Physiotherapist",
-  "Nutritionist"
-];
-
-// Sample doctors data (modified to match the expected types)
+// Sample doctors data
 export const doctors: Doctor[] = [
   {
     id: "1",
     name: "Dr. Rajesh Kumar",
+    gender: "male",
     specialty: "Cardiologist",
     address: "123, Shastri Nagar",
     area: "Kalyani Nagar",
@@ -90,6 +42,7 @@ export const doctors: Doctor[] = [
   {
     id: "2",
     name: "Dr. Priya Sharma",
+    gender: "female",
     specialty: "Neurologist",
     address: "456, Koregaon Park",
     area: "Koregaon Park",
@@ -125,6 +78,7 @@ export const doctors: Doctor[] = [
   {
     id: "3",
     name: "Dr. Amit Patel",
+    gender: "male",
     specialty: "Orthopedist",
     address: "789, Viman Nagar",
     area: "Viman Nagar",
@@ -160,6 +114,7 @@ export const doctors: Doctor[] = [
   {
     id: "4",
     name: "Dr. Meera Desai",
+    gender: "female",
     specialty: "Pediatrician",
     address: "321, Aundh",
     area: "Aundh",
@@ -195,6 +150,7 @@ export const doctors: Doctor[] = [
   {
     id: "5",
     name: "Dr. Suresh Verma",
+    gender: "male",
     specialty: "Dermatologist",
     address: "555, Baner",
     area: "Baner",
@@ -230,6 +186,7 @@ export const doctors: Doctor[] = [
   {
     id: "6",
     name: "Dr. Anjali Joshi",
+    gender: "female",
     specialty: "ENT Specialist",
     address: "777, Hinjewadi",
     area: "Hinjewadi",
@@ -265,6 +222,7 @@ export const doctors: Doctor[] = [
   {
     id: "7",
     name: "Dr. Rahul Mehta",
+    gender: "male",
     specialty: "Ophthalmologist",
     address: "888, Wakad",
     area: "Wakad",
@@ -300,6 +258,7 @@ export const doctors: Doctor[] = [
   {
     id: "8",
     name: "Dr. Neha Gupta",
+    gender: "female",
     specialty: "Psychiatrist",
     address: "999, Kharadi",
     area: "Kharadi",
@@ -333,44 +292,3 @@ export const doctors: Doctor[] = [
     }
   }
 ];
-
-// Search helper functions
-export function searchDoctors(query: string): Doctor[] {
-  const searchTerm = query.toLowerCase();
-  return doctors.filter(doctor => 
-    doctor.name.toLowerCase().includes(searchTerm) ||
-    doctor.specialty.toLowerCase().includes(searchTerm) ||
-    doctor.area.toLowerCase().includes(searchTerm) ||
-    doctor.city.toLowerCase().includes(searchTerm)
-  );
-}
-
-export function filterDoctors(filters: {
-  specialty?: string;
-  city?: string;
-  area?: string;
-  rating?: number;
-  available?: boolean;
-}): Doctor[] {
-  return doctors.filter(doctor => {
-    if (filters.specialty && doctor.specialty !== filters.specialty) return false;
-    if (filters.city && doctor.city !== filters.city) return false;
-    if (filters.area && doctor.area !== filters.area) return false;
-    if (filters.rating && doctor.rating < filters.rating) return false;
-    if (filters.available !== undefined && doctor.available !== filters.available) return false;
-    return true;
-  });
-}
-
-// Get unique values for filters
-export function getUniqueSpecialties(): string[] {
-  return [...new Set(doctors.map(doctor => doctor.specialty))];
-}
-
-export function getUniqueCities(): string[] {
-  return [...new Set(doctors.map(doctor => doctor.city))];
-}
-
-export function getUniqueAreas(): string[] {
-  return [...new Set(doctors.map(doctor => doctor.area))];
-}
