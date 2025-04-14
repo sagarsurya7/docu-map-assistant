@@ -1,10 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Doctor } from '../types';
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
   CardFooter, 
   CardHeader, 
   CardTitle 
@@ -24,7 +22,9 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { getDoctors, getFilterOptions } from '@/api/doctorService';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { getDoctorImage, getFallbackImage, markImageAsFailed } from '@/utils/doctorImageUtils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface DoctorsListProps {
   doctors: Doctor[];
@@ -49,7 +49,9 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
   const [areas, setAreas] = useState<string[]>([]);
   const { toast } = useToast();
   
-  // Update doctors when initialDoctors changes
+  // Used to generate unique keys for doctors without IDs
+  const [uniqueKeyCounter, setUniqueKeyCounter] = useState(0);
+  
   useEffect(() => {
     if (Array.isArray(initialDoctors)) {
       setDoctors(initialDoctors);
@@ -59,7 +61,6 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
     }
   }, [initialDoctors]);
   
-  // Fetch filter options on component mount
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
@@ -75,7 +76,6 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
     fetchFilterOptions();
   }, []);
 
-  // Fetch doctors when filters change
   useEffect(() => {
     const fetchDoctors = async () => {
       setIsLoading(true);
@@ -102,13 +102,27 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
       }
     };
 
-    // Add a debounce to avoid too many API calls
     const timerId = setTimeout(() => {
       fetchDoctors();
     }, 500);
 
     return () => clearTimeout(timerId);
   }, [searchTerm, selectedSpecialty, selectedCity, selectedArea, toast]);
+
+  // Function to generate a unique key for each doctor
+  const getDoctorKey = (doctor: Doctor, index: number) => {
+    if (doctor.id) {
+      return `doctor-${doctor.id}`;
+    }
+    // For doctors without IDs, use a combination of index and counter to ensure uniqueness
+    return `doctor-no-id-${index}-${uniqueKeyCounter}`;
+  };
+
+  // Handle image error with memoization to avoid re-renders
+  const handleImageError = useCallback((doctorId?: string, gender: 'male' | 'female' = 'male') => {
+    // Mark the image as failed in our cache
+    markImageAsFailed(doctorId, gender);
+  }, []);
 
   return (
     <div className="h-full flex flex-col">
@@ -144,6 +158,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               <p className="text-sm font-medium mb-2">Specialty</p>
               <div className="flex flex-wrap gap-2">
                 <Badge 
+                  key="specialty-all"
                   variant={selectedSpecialty === '' ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => setSelectedSpecialty('')}
@@ -152,7 +167,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 </Badge>
                 {specialties.map(specialty => (
                   <Badge 
-                    key={specialty}
+                    key={`specialty-${specialty}`}
                     variant={selectedSpecialty === specialty ? "default" : "outline"}
                     className="cursor-pointer"
                     onClick={() => setSelectedSpecialty(specialty)}
@@ -167,6 +182,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               <p className="text-sm font-medium mb-2">City</p>
               <div className="flex flex-wrap gap-2">
                 <Badge 
+                  key="city-all"
                   variant={selectedCity === '' ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => setSelectedCity('')}
@@ -175,7 +191,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 </Badge>
                 {cities.map(city => (
                   <Badge 
-                    key={city}
+                    key={`city-${city}`}
                     variant={selectedCity === city ? "default" : "outline"}
                     className="cursor-pointer"
                     onClick={() => setSelectedCity(city)}
@@ -190,6 +206,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
               <p className="text-sm font-medium mb-2">Area</p>
               <div className="flex flex-wrap gap-2">
                 <Badge 
+                  key="area-all"
                   variant={selectedArea === '' ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => setSelectedArea('')}
@@ -198,7 +215,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
                 </Badge>
                 {areas.map(area => (
                   <Badge 
-                    key={area}
+                    key={`area-${area}`}
                     variant={selectedArea === area ? "default" : "outline"}
                     className="cursor-pointer"
                     onClick={() => setSelectedArea(area)}
@@ -223,71 +240,95 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
           </div>
         ) : (
           <div className="p-4 space-y-4">
-            {doctors.map((doctor) => (
-              <Card 
-                key={doctor.id} 
-                className={`cursor-pointer hover:shadow-md transition-shadow duration-200 ${
-                  selectedDoctor?.id === doctor.id ? 'border-medical border-2' : ''
-                }`}
-                onClick={() => onSelectDoctor(doctor)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center">
-                      <div className="mr-3">
-                        <img 
-                          src={doctor.imageUrl || "https://randomuser.me/api/portraits/men/1.jpg"} 
-                          alt={doctor.name} 
-                          className="h-10 w-10 rounded-full object-cover" 
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "https://randomuser.me/api/portraits/men/1.jpg";
-                          }}
-                        />
+            {doctors.map((doctor, index) => {
+              const doctorKey = getDoctorKey(doctor, index);
+              
+              // Safety check to avoid rendering invalid doctor data
+              if (!doctor || !doctor.name) {
+                console.warn("Invalid doctor data in list");
+                return null;
+              }
+              
+              // Determine gender based on name or use the gender field if available
+              const genderValue = doctor.gender as 'male' | 'female' | undefined;
+              const gender = genderValue || 
+                (doctor.name.includes("Dr. ") && 
+                ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name)) 
+                  ? 'female' 
+                  : 'male');
+              
+              // Get profile image with the doctor's ID and determined gender
+              const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);
+              const fallbackImg = getFallbackImage(gender);
+              
+              return (
+                <div key={doctorKey}>
+                  <Card 
+                    className={`cursor-pointer hover:shadow-md transition-shadow duration-200 ${
+                      selectedDoctor?.id === doctor.id ? 'border-medical border-2' : ''
+                    }`}
+                    onClick={() => onSelectDoctor(doctor)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center">
+                          <div className="mr-3">
+                            <Avatar>
+                              <AvatarImage
+                                src={profileImage}
+                                alt={doctor.name}
+                                onError={() => handleImageError(doctor.id, gender)}
+                              />
+                              <AvatarFallback>
+                                {doctor.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">{doctor.name}</CardTitle>
+                            <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
+                          <span className="text-sm font-medium">{doctor.rating}</span>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-base">{doctor.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
+                    </CardHeader>
+                    <CardContent className="pb-3 pt-0">
+                      <div className="flex items-start text-sm text-muted-foreground mb-2">
+                        <MapPin className="h-3.5 w-3.5 mr-1 mt-0.5 flex-shrink-0" />
+                        <span>{doctor.address}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center">
-                      <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
-                      <span className="text-sm font-medium">{doctor.rating}</span>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3 pt-0">
-                  <div className="flex items-start text-sm text-muted-foreground mb-2">
-                    <MapPin className="h-3.5 w-3.5 mr-1 mt-0.5 flex-shrink-0" />
-                    <span>{doctor.address}</span>
-                  </div>
-                  <div className="flex items-center mt-2">
-                    <Badge 
-                      variant="outline" 
-                      className={`${doctor.available ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
-                    >
-                      {doctor.available ? 'Available Today' : 'Not Available Today'}
-                    </Badge>
-                    <Badge 
-                      variant="outline"
-                      className="ml-2"
-                    >
-                      ₹{doctor.consultationFee}
-                    </Badge>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Book
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1">
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    Chat
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                      <div className="flex items-center mt-2">
+                        <Badge 
+                          variant="outline" 
+                          className={`${doctor.available ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                        >
+                          {doctor.available ? 'Available Today' : 'Not Available Today'}
+                        </Badge>
+                        <Badge 
+                          variant="outline"
+                          className="ml-2"
+                        >
+                          ₹{doctor.consultationFee}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-0 flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Book
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        Chat
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

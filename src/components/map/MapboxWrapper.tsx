@@ -1,5 +1,4 @@
-
-import React, { useRef, memo } from 'react';
+import React, { useRef, memo, useEffect } from 'react';
 import { Doctor } from '@/types';
 import MapContainer from './MapContainer';
 import { useMapboxWrapper } from '@/hooks/mapbox/useMapboxWrapper';
@@ -17,13 +16,8 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
   onSelectDoctor,
   onCriticalError 
 }) => {
-  // Create a stable identifier for this instance (using primitive string)
+  // Create a stable identifier for this instance
   const componentId = useRef(`mapbox-${Date.now().toString()}`).current;
-  
-  console.log(`[${componentId}] MapboxWrapper rendering`);
-
-  // Ensure doctors is an array
-  const validDoctors = Array.isArray(doctors) ? doctors : [];
   
   // Use the refactored hook for map functionality
   const {
@@ -32,9 +26,7 @@ const MapboxWrapper: React.FC<MapboxWrapperProps> = ({
     mapError,
     isMapInitialized,
     handleManualRetry
-  } = useMapboxWrapper(validDoctors, selectedDoctor, onCriticalError, componentId);
-
-  console.log(`[${componentId}] MapboxWrapper rendering complete`);
+  } = useMapboxWrapper(doctors, selectedDoctor, onCriticalError, componentId);
 
   return (
     <MapContainer

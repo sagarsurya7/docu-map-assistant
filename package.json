@@ -13,7 +13,7 @@
   "dependencies": {
     "@copilotkit/react-core": "^1.8.3",
     "@copilotkit/react-textarea": "^1.8.3",
-    "@copilotkit/react-ui": "^1.8.3",
+    "@copilotkit/react-ui": "^1.8",
     "@googlemaps/js-api-loader": "^1.16.8",
     "@googlemaps/react-wrapper": "^1.1.42",
     "@hookform/resolvers": "^3.9.0",

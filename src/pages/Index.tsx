@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
@@ -56,7 +55,7 @@ const Index = () => {
   
   return (
     <CopilotKit publicApiKey={COPILOT_API_KEY}>
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col h-screen-safe">
         <Header 
           isMobile={isMobile} 
           toggleMobileMenu={() => setMobileView('list')} 

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, memo, useRef } from 'react';
 import MapStyles from './MapStyles';
 import LoadingIndicator from './LoadingIndicator';
 import MapError from './MapError';
@@ -24,9 +23,13 @@ const MapContainer: React.FC<MapContainerProps> = ({
   isMapInitialized,
   onRetry
 }) => {
-  // Show a toast notification when the map is initialized
-  React.useEffect(() => {
-    if (isMapInitialized && !isLoading) {
+  // Using refs to track initial load to prevent multiple toasts
+  const initializedToastShown = useRef(false);
+  const stabilizingMessageShown = useRef(false);
+  
+  useEffect(() => {
+    if (isMapInitialized && !isLoading && !initializedToastShown.current) {
+      initializedToastShown.current = true;
       toast({
         title: "Map Ready",
         description: "The map is now fully loaded and stable.",
@@ -35,17 +38,20 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   }, [isMapInitialized, isLoading]);
 
-  // Use a mutable ref for DOM assignment - handling it in a safe, serializable way
-  const mapContainerRef = React.useCallback((node: HTMLDivElement | null) => {
-    // Using safe object assignment to avoid circular references
-    if (mapRef && typeof mapRef === 'object') {
-      // Safely update the current property
-      Object.defineProperty(mapRef, 'current', {
-        writable: true,
-        value: node
-      });
+  // Show stabilizing message only once
+  const [showStabilizingMessage, setShowStabilizingMessage] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (!isLoading && isMapInitialized && !stabilizingMessageShown.current) {
+      stabilizingMessageShown.current = true;
+      setShowStabilizingMessage(true);
+      // Hide stabilizing message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowStabilizingMessage(false);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-  }, [mapRef]);
+  }, [isMapInitialized, isLoading]);
 
   return (
     <div className="h-full relative">
@@ -57,9 +63,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
         />
       ) : (
         <>
-          <div ref={mapContainerRef} className="h-full w-full mapbox-container"></div>
+          <div ref={mapRef} className="h-full w-full mapbox-container"></div>
           {isLoading && <LoadingIndicator />}
-          {!isLoading && isMapInitialized && (
+          {showStabilizingMessage && (
             <div className="absolute top-4 left-4 bg-white/80 px-4 py-2 rounded-md shadow-md text-sm font-medium animate-pulse">
               Map is loading and stabilizing, locations will appear soon...
             </div>
@@ -76,4 +82,4 @@ const MapContainer: React.FC<MapContainerProps> = ({
   );
 };
 
-export default MapContainer;
+export default memo(MapContainer);
