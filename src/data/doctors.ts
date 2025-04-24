@@ -1,11 +1,10 @@
-
 import { Doctor } from '../types';
 import { puneAreas } from './locations';
 import { specialties } from './specialties';
 import { getDoctors } from '@/api/doctorService';
 
 // Fallback doctors data - will be used if API fails
-const fallbackDoctors: Doctor[] = [
+export const fallbackDoctors: Doctor[] = [
   {
     id: "1",
     name: "Dr. John Doe",
@@ -46,13 +45,10 @@ const fallbackDoctors: Doctor[] = [
   }
 ];
 
-// Export an array of doctors for use in components
-export const doctors = fallbackDoctors;
-
 // Export areas and specialties arrays
 export { puneAreas, specialties };
 
-// Search helper functions with typesafety
+// Search and filter functions
 export function searchDoctors(doctorsList: Doctor[], query: string): Doctor[] {
   const searchTerm = query.toLowerCase();
   return doctorsList.filter(doctor => 
