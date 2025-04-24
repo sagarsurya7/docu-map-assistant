@@ -1,5 +1,5 @@
 
-import { Doctor } from '../types';
+import { Doctor } from '@/types';
 
 // Search helper functions
 export function searchDoctors(doctorsList: Doctor[], query: string): Doctor[] {
@@ -27,4 +27,17 @@ export function filterDoctors(doctorsList: Doctor[], filters: {
     if (filters.available !== undefined && doctor.available !== filters.available) return false;
     return true;
   });
+}
+
+// Get unique values for filters
+export function getUniqueSpecialties(doctors: Doctor[]): string[] {
+  return [...new Set(doctors.map(doctor => doctor.specialty))];
+}
+
+export function getUniqueCities(doctors: Doctor[]): string[] {
+  return [...new Set(doctors.map(doctor => doctor.city))];
+}
+
+export function getUniqueAreas(doctors: Doctor[]): string[] {
+  return [...new Set(doctors.map(doctor => doctor.area))];
 }
