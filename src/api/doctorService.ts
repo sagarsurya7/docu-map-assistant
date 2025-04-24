@@ -1,5 +1,5 @@
 
-import apiClient from './apiClient';
+import apiClient from '../../apiClient';
 import { Doctor } from '../types';
 
 export interface DoctorFilters {

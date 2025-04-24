@@ -1,5 +1,5 @@
 
-import apiClient from './apiClient';
+import apiClient from '../../apiClient';
 import { BaseMessage } from '@langchain/core/messages';
 import { toast } from '@/components/ui/use-toast';
 

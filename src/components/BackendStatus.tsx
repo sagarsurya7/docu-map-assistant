@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertCircle, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import apiClient from '@/api/apiClient';
+import apiClient from '../../apiClient';
 
 const BackendStatus: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
