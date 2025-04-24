@@ -20,12 +20,7 @@ export interface FilterOptions {
 export const getDoctors = async (filters: DoctorFilters = {}): Promise<Doctor[]> => {
   try {
     const response = await apiClient.get('/doctors', { params: filters });
-    // Transform the data to match our Doctor type if needed
-    const doctors = response.data.map((doctor: any) => ({
-      ...doctor,
-      id: doctor.id || doctor._id.$oid, // Handle both MongoDB ObjectId and regular id
-    }));
-    return doctors;
+    return response.data;
   } catch (error) {
     console.error('Error fetching doctors:', error);
     throw error;
@@ -38,6 +33,17 @@ export const getFilterOptions = async (): Promise<FilterOptions> => {
     return response.data;
   } catch (error) {
     console.error('Error fetching filter options:', error);
+    throw error;
+  }
+};
+
+// Get doctor by ID
+export const getDoctorById = async (id: string): Promise<Doctor> => {
+  try {
+    const response = await apiClient.get<Doctor>(`/doctors/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching doctor with ID ${id}:`, error);
     throw error;
   }
 };
