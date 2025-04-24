@@ -1,134 +1,104 @@
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { DoctorDto, FilterOptionsDto, DoctorFilterDto } from './dto/doctor.dto';
+import { Doctor } from './schemas/doctor.schema';
 
 @Injectable()
-export class DoctorsService {
-  // In-memory cache of doctors to simulate a database
-  private doctors: DoctorDto[] = [];
+export class DoctorsService implements OnModuleInit {
+  constructor(
+    @InjectModel(Doctor.name) private doctorModel: Model<Doctor>
+  ) {}
 
-  constructor() {
-    // Load initial doctors data
-    this.loadInitialData();
-  }
-
-  private loadInitialData() {
-    // This would normally be a database connection
-    // For now we're using the same data but acting as if it comes from a DB
-    try {
-      // Simulate fetching from database
-      console.log('Connecting to doctors database...');
-      
-      // Using require to import the JSON file only once during initialization
-      // In a real implementation, this would be a database query
-      const doctorsData = require('../../data/doctors.json');
-      this.doctors = doctorsData;
-      
-      console.log(`Successfully loaded ${this.doctors.length} doctors from database`);
-    } catch (error) {
-      console.error('Database connection error:', error);
-      this.doctors = [];
+  async onModuleInit() {
+    // Check if we have any doctors in the database
+    const count = await this.doctorModel.countDocuments();
+    if (count === 0) {
+      // If no doctors exist, seed the database with initial data
+      const initialData = require('../../data/doctors.json');
+      await this.doctorModel.insertMany(initialData);
+      console.log('Database seeded with initial doctors data');
     }
   }
 
   async findAll(filters: DoctorFilterDto = {}): Promise<DoctorDto[]> {
-    // Simulate database query with filters
-    console.log('Executing database query with filters:', filters);
+    console.log('Executing MongoDB query with filters:', filters);
     
-    let filteredDoctors = [...this.doctors];
+    let query = this.doctorModel.find();
 
-    // Apply search filter
     if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filteredDoctors = filteredDoctors.filter(doctor => 
-        doctor.name.toLowerCase().includes(searchTerm) ||
-        doctor.specialty.toLowerCase().includes(searchTerm) ||
-        doctor.area?.toLowerCase().includes(searchTerm) ||
-        doctor.city.toLowerCase().includes(searchTerm)
-      );
+      const searchRegex = new RegExp(filters.search, 'i');
+      query = query.or([
+        { name: searchRegex },
+        { specialty: searchRegex },
+        { area: searchRegex },
+        { city: searchRegex }
+      ]);
     }
 
-    // Apply other filters
     if (filters.specialty) {
-      filteredDoctors = filteredDoctors.filter(doctor => 
-        doctor.specialty === filters.specialty
-      );
+      query = query.where('specialty').equals(filters.specialty);
     }
 
     if (filters.city) {
-      filteredDoctors = filteredDoctors.filter(doctor => 
-        doctor.city === filters.city
-      );
+      query = query.where('city').equals(filters.city);
     }
 
     if (filters.area) {
-      filteredDoctors = filteredDoctors.filter(doctor => 
-        doctor.area === filters.area
-      );
+      query = query.where('area').equals(filters.area);
     }
 
     if (filters.rating) {
-      filteredDoctors = filteredDoctors.filter(doctor => 
-        doctor.rating >= filters.rating
-      );
+      query = query.where('rating').gte(filters.rating);
     }
 
     if (filters.available !== undefined) {
-      filteredDoctors = filteredDoctors.filter(doctor => 
-        doctor.available === filters.available
-      );
+      query = query.where('available').equals(filters.available);
     }
 
-    console.log(`Query returned ${filteredDoctors.length} results`);
-    return filteredDoctors;
+    const doctors = await query.exec();
+    console.log(`Query returned ${doctors.length} results`);
+    return doctors;
   }
 
   async findOne(id: string): Promise<DoctorDto | undefined> {
-    // Simulate database findOne query
     console.log(`Looking up doctor with ID: ${id}`);
-    return this.doctors.find(doctor => doctor.id === id);
+    return this.doctorModel.findOne({ id }).exec();
   }
 
   async getFilterOptions(): Promise<FilterOptionsDto> {
-    // Simulate aggregation queries that would normally be done in the database
     console.log('Retrieving filter options from database...');
     
-    const specialties = [...new Set(this.doctors.map(doctor => doctor.specialty))];
-    const cities = [...new Set(this.doctors.map(doctor => doctor.city))];
-    const areas = [...new Set(this.doctors.map(doctor => doctor.area).filter(Boolean))];
+    const [specialties, cities, areas] = await Promise.all([
+      this.doctorModel.distinct('specialty'),
+      this.doctorModel.distinct('city'),
+      this.doctorModel.distinct('area')
+    ]);
 
-    return { specialties, cities, areas };
+    return { 
+      specialties, 
+      cities, 
+      areas: areas.filter(Boolean) 
+    };
   }
 
-  // Methods for future CRUD operations
   async create(doctorDto: DoctorDto): Promise<DoctorDto> {
-    // Simulate database insert operation
     console.log('Creating new doctor record:', doctorDto.name);
-    this.doctors.push(doctorDto);
-    return doctorDto;
+    const newDoctor = new this.doctorModel(doctorDto);
+    return newDoctor.save();
   }
 
   async update(id: string, doctorDto: Partial<DoctorDto>): Promise<DoctorDto | undefined> {
-    // Simulate database update operation
     console.log(`Updating doctor with ID: ${id}`);
-    const index = this.doctors.findIndex(doctor => doctor.id === id);
-    if (index === -1) {
-      return undefined;
-    }
-
-    this.doctors[index] = { ...this.doctors[index], ...doctorDto };
-    return this.doctors[index];
+    return this.doctorModel
+      .findOneAndUpdate({ id }, doctorDto, { new: true })
+      .exec();
   }
 
   async remove(id: string): Promise<boolean> {
-    // Simulate database delete operation
     console.log(`Deleting doctor with ID: ${id}`);
-    const index = this.doctors.findIndex(doctor => doctor.id === id);
-    if (index === -1) {
-      return false;
-    }
-
-    this.doctors.splice(index, 1);
-    return true;
+    const result = await this.doctorModel.deleteOne({ id }).exec();
+    return result.deletedCount > 0;
   }
 }
