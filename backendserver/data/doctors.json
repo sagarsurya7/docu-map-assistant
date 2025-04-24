@@ -1,0 +1,81 @@
+
+[
+  {
+    "id": "1",
+    "name": "Dr. Sarah Johnson",
+    "specialty": "Cardiologist",
+    "address": "123 Heart Lane",
+    "area": "Koramangala",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "country": "India",
+    "rating": 4.9,
+    "experience": 15,
+    "languages": ["English", "Hindi", "Kannada"],
+    "education": ["MBBS - AIIMS Delhi", "MD Cardiology - JIPMER"],
+    "available": true,
+    "consultationFee": 1500,
+    "imageUrl": "/doctors/female-1.jpg",
+    "gender": "female",
+    "description": "Dr. Sarah Johnson is a board-certified cardiologist with over 15 years of experience in treating heart diseases.",
+    "location": {
+      "lat": 12.9352,
+      "lng": 77.6245
+    },
+    "availability": {
+      "monday": { "morning": true, "afternoon": true, "evening": false },
+      "tuesday": { "morning": true, "afternoon": true, "evening": false },
+      "wednesday": { "morning": false, "afternoon": true, "evening": true },
+      "thursday": { "morning": true, "afternoon": true, "evening": false },
+      "friday": { "morning": true, "afternoon": false, "evening": false },
+      "saturday": { "morning": false, "afternoon": false, "evening": true },
+      "sunday": { "morning": false, "afternoon": false, "evening": false }
+    }
+  },
+  {
+    "id": "2",
+    "name": "Dr. Rajesh Verma",
+    "specialty": "Orthopedic Surgeon",
+    "address": "45 Bone Street",
+    "area": "Indiranagar",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "country": "India",
+    "rating": 4.7,
+    "experience": 12,
+    "languages": ["English", "Hindi", "Gujarati"],
+    "education": ["MBBS - KEM Hospital", "MS Orthopedics - AIIMS"],
+    "available": true,
+    "consultationFee": 1200,
+    "imageUrl": "/doctors/male-1.jpg",
+    "gender": "male",
+    "description": "Dr. Rajesh Verma specializes in joint replacements and sports injuries with 12 years of practice.",
+    "location": {
+      "lat": 12.9784,
+      "lng": 77.6408
+    }
+  },
+  {
+    "id": "3",
+    "name": "Dr. Priya Sharma",
+    "specialty": "Dermatologist",
+    "address": "789 Skin Care Avenue",
+    "area": "HSR Layout",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "country": "India",
+    "rating": 4.8,
+    "experience": 10,
+    "languages": ["English", "Hindi", "Bengali"],
+    "education": ["MBBS - Manipal", "MD Dermatology - PGI Chandigarh"],
+    "available": true,
+    "consultationFee": 1000,
+    "imageUrl": "/doctors/female-2.jpg",
+    "gender": "female",
+    "description": "Dr. Priya Sharma is an expert in cosmetic dermatology and skin disorders with 10 years of clinical practice.",
+    "location": {
+      "lat": 12.9147,
+      "lng": 77.6809
+    }
+  }
+]
