@@ -1,4 +1,3 @@
-
 import { BaseMessage } from '@langchain/core/messages';
 
 export interface ChatMessage {
@@ -22,7 +21,7 @@ export interface Doctor {
   available: boolean;
   consultationFee: number;
   imageUrl: string;
-  // Adding these properties to fix the errors
+  gender?: 'male' | 'female';
   image?: string;
   description?: string;
   reviews?: any[];
