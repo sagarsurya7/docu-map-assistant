@@ -16,6 +16,9 @@ export interface Doctor {
   consultationFee: number;
   imageUrl: string;
   gender?: 'male' | 'female';
+  image?: string;
+  description?: string;
+  reviews?: any[];  // Adding reviews property to fix the TypeScript errors
   location?: {
     lat: number;
     lng: number;
@@ -27,4 +30,10 @@ export interface Doctor {
       evening: boolean;
     };
   };
+}
+
+// Add ChatMessage interface that's being imported in multiple files
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }

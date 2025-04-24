@@ -1,6 +1,6 @@
 
 import apiClient from './apiClient';
-import { Doctor } from '@/types';
+import { Doctor } from '../types';
 
 export interface DoctorFilters {
   search?: string;

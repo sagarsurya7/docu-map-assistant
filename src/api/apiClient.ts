@@ -48,21 +48,6 @@ apiClient.interceptors.response.use(
             }
         }
         
-        if (response.config.url?.includes('/symptoms') && !Array.isArray(response.data)) {
-            console.warn('Symptoms API did not return an array, converting to array format');
-            // Check if the data is in a nested property first
-            if (response.data && typeof response.data === 'object' && Array.isArray(response.data.symptoms)) {
-                response.data = response.data.symptoms;
-            } else if (response.data && typeof response.data === 'object') {
-                // If it's an object but not an array, convert to array with that item
-                console.warn('Converting object to single-item array');
-                response.data = [response.data];
-            } else {
-                // If not, set an empty array
-                response.data = [];
-            }
-        }
-        
         if (response.config.url?.includes('/doctors/filters') && response.data) {
             // Ensure filter options are always arrays
             const { specialties = [], cities = [], areas = [] } = response.data;
@@ -87,7 +72,7 @@ apiClient.interceptors.response.use(
             console.error('Request timeout - backend server might be slow or unresponsive');
         } else if (!error.response) {
             // Network error or server not running
-            console.error('Network error or backend server not running. Please start the backend server on port 3001.');
+            console.error('Network error or backend server not running.');
             console.error('API Error Details:', {
                 message: error.message,
                 code: error.code,
@@ -114,7 +99,7 @@ const connectionTest = () => {
         .then(() => console.log('✅ Backend server connection successful'))
         .catch(error => {
             if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-                console.warn('⚠️ Connection issue detected. Make sure your backend server is running on port 3001.');
+                console.warn('⚠️ Connection issue detected. Make sure your backend server is running.');
                 console.log('The app will function with fallback data if available.');
             } else {
                 console.warn('⚠️ Could not connect to backend server:', error.message);
