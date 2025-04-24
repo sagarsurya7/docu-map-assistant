@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { doctors as doctorsData } from '@/data/doctors';
+import { fallbackDoctors } from '@/data/doctors';
 import { Doctor } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { getDoctors } from '@/api/doctorService';
@@ -31,7 +30,7 @@ export function useDoctorsData() {
         } else {
           // If API returns empty or invalid data, use fallback
           console.log("API returned empty or invalid data, using fallback");
-          setAllDoctors(doctorsData);
+          setAllDoctors(fallbackDoctors);
           setUsingFallbackData(true);
           
           // Show a toast explaining we're using fallback data
@@ -43,7 +42,7 @@ export function useDoctorsData() {
       } catch (err) {
         console.error("Error fetching doctors from API:", err);
         // Use fallback data if API fails
-        setAllDoctors(doctorsData);
+        setAllDoctors(fallbackDoctors);
         setUsingFallbackData(true);
         
         toast({

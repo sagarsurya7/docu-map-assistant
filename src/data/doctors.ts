@@ -1,4 +1,3 @@
-
 import { Doctor } from '../types';
 import { puneAreas } from './locations';
 import { specialties } from './specialties';
@@ -621,4 +620,3 @@ export function getUniqueCities(doctors: Doctor[]): string[] {
 export function getUniqueAreas(doctors: Doctor[]): string[] {
   return [...new Set(doctors.map(doctor => doctor.area))];
 }
-
