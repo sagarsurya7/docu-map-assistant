@@ -1,8 +1,8 @@
 
-import { Doctor } from '@/types';
-import { puneAreas } from '@/data/locations';
-import { specialties } from '@/data/specialties';
-import { getDoctors } from '@/api/doctorService';
+import { Doctor } from '../types';
+import { puneAreas } from './locations';
+import { specialties } from './specialties';
+import { getDoctors } from '../api/doctorService';
 
 // Fallback doctors data - will be used if API fails
 export const fallbackDoctors: Doctor[] = [

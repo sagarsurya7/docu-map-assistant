@@ -1,5 +1,5 @@
 
-import { Doctor } from '@/types';
+import { Doctor } from '../types';
 
 // Search helper functions
 export function searchDoctors(doctorsList: Doctor[], query: string): Doctor[] {
