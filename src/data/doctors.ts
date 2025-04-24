@@ -50,7 +50,7 @@ export const specialties = [
 export const doctors: Doctor[] = [
   {
     id: "1",
-    name: "Dr. Rajesh Kumar",
+    name: "Dr. Rajedsh Kumar",
     specialty: "Cardiologist",
     address: "123, Shastri Nagar",
     area: "Kalyani Nagar",

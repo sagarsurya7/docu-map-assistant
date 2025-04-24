@@ -22,7 +22,8 @@ export interface Doctor {
   available: boolean;
   consultationFee: number;
   imageUrl: string;
-  // Adding these properties to fix the errors
+  gender?: 'male' | 'female'; // Add gender property as optional
+  // Other properties
   image?: string;
   description?: string;
   reviews?: any[];

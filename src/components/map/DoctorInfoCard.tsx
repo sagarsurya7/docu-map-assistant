@@ -1,3 +1,4 @@
+
 import React, { useCallback } from 'react';
 import { Doctor } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,11 +28,17 @@ const DoctorInfoCard: React.FC<DoctorInfoCardProps> = ({
   }
   
   // Determine gender based on doctor data
-  const genderValue = doctor.gender as 'male' | 'female' | undefined;
-  const isFemale = genderValue === 'female' || (doctor.name.includes("Dr. ") && 
-    ["Priya", "Meera", "Anjali", "Neha"].some(name => doctor.name.includes(name)));
+  const inferGender = (): 'male' | 'female' => {
+    if (doctor.gender) return doctor.gender;
+    
+    // Infer from name if gender is not provided
+    return (doctor.name.includes("Dr. ") && 
+      ["Priya", "Meera", "Anjali", "Neha", "Alice", "Emily", "Linda"].some(name => doctor.name.includes(name)))
+      ? 'female' 
+      : 'male';
+  };
   
-  const gender = isFemale ? 'female' : 'male';
+  const gender = inferGender();
   
   // Use reliable image selection approach
   const profileImage = doctor.imageUrl || getDoctorImage(doctor.id, gender);

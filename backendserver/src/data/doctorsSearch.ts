@@ -1,18 +1,7 @@
 
-import { Doctor } from './../types';
-import { puneAreas } from './locations';
-import { specialties } from './specialties';
-import { getDoctors } from '../api/doctorService';
+import { Doctor } from '../types';
 
-// Fallback doctors data - will be used if API fails
-export const fallbackDoctors: Doctor[] = [
-  // ... keep existing code (doctors array content)
-];
-
-// Export areas and specialties arrays
-export { puneAreas, specialties };
-
-// Search and filter functions
+// Search helper functions
 export function searchDoctors(doctorsList: Doctor[], query: string): Doctor[] {
   const searchTerm = query.toLowerCase();
   return doctorsList.filter(doctor => 

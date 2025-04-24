@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
@@ -51,8 +52,7 @@ const Index = () => {
     if (isMobile) {
       setMobileView('list');
     }
-  }, [isMobile]);
-  
+  }, [isMobile]);  
   return (
     <CopilotKit publicApiKey={COPILOT_API_KEY}>
       <div className="flex flex-col h-screen-safe">
@@ -76,28 +76,28 @@ const Index = () => {
         <main className="flex-1 overflow-hidden">
           {isMobile ? (
             <MobileView
-              mobileView={mobileView}
-              setMobileView={setMobileView}
-              isLoading={isLoading}
-              allDoctors={safeDoctors}
-              selectedDoctor={selectedDoctor}
-              handleSelectDoctor={(doctor) => {
-                handleSelectDoctor(doctor);
-                if (isMobile) {
-                  setMobileView('map');
-                }
-              }}
-            />
-          ) : (
-            <DesktopView
-              isLoading={isLoading}
-              allDoctors={safeDoctors}
-              selectedDoctor={selectedDoctor}
-              onSelectDoctor={handleSelectDoctor}
-              showChatBot={showChatBot}
-              showDoctorsList={showDoctorsList}
-              toggleChatBot={toggleChatBot}
-              toggleDoctorsList={toggleDoctorsList}
+            mobileView={mobileView}
+            setMobileView={setMobileView}
+            isLoading={isLoading}
+            allDoctors={safeDoctors}
+            selectedDoctor={selectedDoctor}
+            handleSelectDoctor={(doctor) => {
+              handleSelectDoctor(doctor);
+              if (isMobile) {
+                setMobileView('map');
+              }
+            }}
+          />
+        ) : (
+          <DesktopView
+            isLoading={isLoading}
+            allDoctors={safeDoctors}
+            selectedDoctor={selectedDoctor}
+            onSelectDoctor={handleSelectDoctor}
+            showChatBot={showChatBot}
+            showDoctorsList={showDoctorsList}
+            toggleChatBot={toggleChatBot}
+            toggleDoctorsList={toggleDoctorsList}
             />
           )}
         </main>

@@ -3,6 +3,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Doctor } from './schemas/doctor.schema';
 
+export interface DoctorFilters {
+  search?: string;
+  specialty?: string;
+  city?: string;
+  area?: string;
+  rating?: number;
+  available?: boolean;
+}
+
+export interface FilterOptions {
+  specialties: string[];
+  cities: string[];
+  areas: string[];
+}
+
 @Injectable()
 export class DoctorService {
   constructor(@InjectModel(Doctor.name) private doctorModel: Model<Doctor>) {}
@@ -30,3 +45,5 @@ export class DoctorService {
     return { message: 'Doctor added successfully', doctor: newDoctor };
   }
 }
+
+
