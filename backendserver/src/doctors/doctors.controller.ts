@@ -36,4 +36,10 @@ export class DoctorsController {
   async remove(@Param('id') id: string) {
     return this.doctorsService.remove(id);
   }
+  
+  @Delete()
+  async removeAll() {
+    await this.doctorsService.clearAllDoctors();
+    return { message: 'All doctors removed from database' };
+  }
 }

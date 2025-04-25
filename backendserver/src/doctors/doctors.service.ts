@@ -4,6 +4,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DoctorDto, FilterOptionsDto, DoctorFilterDto } from './dto/doctor.dto';
 import { Doctor } from './schemas/doctor.schema';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class DoctorsService implements OnModuleInit {
@@ -14,11 +16,30 @@ export class DoctorsService implements OnModuleInit {
   async onModuleInit() {
     // Check if we have any doctors in the database
     const count = await this.doctorModel.countDocuments();
+    console.log(`Database initialization: Found ${count} doctors in MongoDB`);
+    
     if (count === 0) {
-      // If no doctors exist, seed the database with initial data
-      const initialData = require('../../data/doctors.json');
-      await this.doctorModel.insertMany(initialData);
-      console.log('Database seeded with initial doctors data');
+      // If no doctors exist, try to seed the database with initial data
+      try {
+        const dataFilePath = path.join(__dirname, '..', '..', 'data', 'doctors.json');
+        
+        if (fs.existsSync(dataFilePath)) {
+          console.log(`Found doctors.json file at: ${dataFilePath}`);
+          const fileData = fs.readFileSync(dataFilePath, 'utf8');
+          const initialData = JSON.parse(fileData);
+          
+          if (Array.isArray(initialData) && initialData.length > 0) {
+            await this.doctorModel.insertMany(initialData);
+            console.log(`Database seeded with ${initialData.length} doctors from JSON file`);
+          } else {
+            console.log('doctors.json file exists but contains no valid data');
+          }
+        } else {
+          console.log('doctors.json file not found. Database will start empty.');
+        }
+      } catch (error) {
+        console.error('Error seeding the database:', error);
+      }
     }
   }
 
@@ -65,23 +86,28 @@ export class DoctorsService implements OnModuleInit {
 
     try {
       const doctors = await query.exec();
-      console.log(`Query returned ${doctors.length} results`);
+      console.log(`Query returned ${doctors.length} results from MongoDB`);
       
       if (doctors.length === 0) {
         console.log('No doctors found. Checking if database has any doctors...');
         const totalDoctors = await this.doctorModel.countDocuments();
         console.log(`Total doctors in database: ${totalDoctors}`);
-        
-        if (totalDoctors === 0) {
-          console.log('No doctors in database. Attempting to seed data...');
-          await this.onModuleInit(); // Try to seed data again
-          return this.findAll(filters); // Retry the query
-        }
       }
       
       return doctors;
     } catch (error) {
       console.error('Error executing MongoDB query:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to clear all doctors from database
+  async clearAllDoctors(): Promise<void> {
+    try {
+      const result = await this.doctorModel.deleteMany({});
+      console.log(`Cleared ${result.deletedCount} doctors from database`);
+    } catch (error) {
+      console.error('Error clearing doctors from database:', error);
       throw error;
     }
   }
