@@ -26,6 +26,9 @@ export class DoctorsService implements OnModuleInit {
     console.log('Executing MongoDB query with filters:', filters);
     
     let query = this.doctorModel.find();
+    
+    // Add this for debugging
+    console.log('MongoDB query before filters:', JSON.stringify(query.getFilter()));
 
     if (filters.search) {
       const searchRegex = new RegExp(filters.search, 'i');
@@ -57,9 +60,30 @@ export class DoctorsService implements OnModuleInit {
       query = query.where('available').equals(filters.available);
     }
 
-    const doctors = await query.exec();
-    console.log(`Query returned ${doctors.length} results`);
-    return doctors;
+    // Add this for debugging
+    console.log('MongoDB query after filters:', JSON.stringify(query.getFilter()));
+
+    try {
+      const doctors = await query.exec();
+      console.log(`Query returned ${doctors.length} results`);
+      
+      if (doctors.length === 0) {
+        console.log('No doctors found. Checking if database has any doctors...');
+        const totalDoctors = await this.doctorModel.countDocuments();
+        console.log(`Total doctors in database: ${totalDoctors}`);
+        
+        if (totalDoctors === 0) {
+          console.log('No doctors in database. Attempting to seed data...');
+          await this.onModuleInit(); // Try to seed data again
+          return this.findAll(filters); // Retry the query
+        }
+      }
+      
+      return doctors;
+    } catch (error) {
+      console.error('Error executing MongoDB query:', error);
+      throw error;
+    }
   }
 
   async findOne(id: string): Promise<DoctorDto | undefined> {
