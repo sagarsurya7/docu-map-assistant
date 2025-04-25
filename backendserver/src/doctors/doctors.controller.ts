@@ -9,37 +9,92 @@ export class DoctorsController {
 
   @Get()
   async findAll(@Query() filters: DoctorFilterDto) {
-    return this.doctorsService.findAll(filters);
+    console.log('DoctorsController: findAll endpoint called with filters:', filters);
+    try {
+      const result = await this.doctorsService.findAll(filters);
+      console.log(`DoctorsController: findAll completed successfully, returning ${result.length} doctors`);
+      return result;
+    } catch (error) {
+      console.error('DoctorsController: Error in findAll endpoint:', error);
+      throw error;
+    }
   }
 
   @Get('filters')
   async getFilterOptions() {
-    return this.doctorsService.getFilterOptions();
+    console.log('DoctorsController: getFilterOptions endpoint called');
+    try {
+      const result = await this.doctorsService.getFilterOptions();
+      console.log('DoctorsController: getFilterOptions completed successfully');
+      return result;
+    } catch (error) {
+      console.error('DoctorsController: Error in getFilterOptions endpoint:', error);
+      throw error;
+    }
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.doctorsService.findOne(id);
+    console.log(`DoctorsController: findOne endpoint called with id: ${id}`);
+    try {
+      const result = await this.doctorsService.findOne(id);
+      console.log('DoctorsController: findOne completed successfully');
+      return result;
+    } catch (error) {
+      console.error(`DoctorsController: Error in findOne endpoint for id ${id}:`, error);
+      throw error;
+    }
   }
 
   @Post()
   async create(@Body() doctorDto: DoctorDto) {
-    return this.doctorsService.create(doctorDto);
+    console.log('DoctorsController: create endpoint called');
+    try {
+      const result = await this.doctorsService.create(doctorDto);
+      console.log('DoctorsController: Doctor created successfully');
+      return result;
+    } catch (error) {
+      console.error('DoctorsController: Error in create endpoint:', error);
+      throw error;
+    }
   }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() doctorDto: Partial<DoctorDto>) {
-    return this.doctorsService.update(id, doctorDto);
+    console.log(`DoctorsController: update endpoint called for id: ${id}`);
+    try {
+      const result = await this.doctorsService.update(id, doctorDto);
+      console.log('DoctorsController: Doctor updated successfully');
+      return result;
+    } catch (error) {
+      console.error(`DoctorsController: Error in update endpoint for id ${id}:`, error);
+      throw error;
+    }
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    return this.doctorsService.remove(id);
+    console.log(`DoctorsController: remove endpoint called for id: ${id}`);
+    try {
+      const result = await this.doctorsService.remove(id);
+      console.log(`DoctorsController: Doctor with id ${id} removed successfully`);
+      return result;
+    } catch (error) {
+      console.error(`DoctorsController: Error in remove endpoint for id ${id}:`, error);
+      throw error;
+    }
   }
   
   @Delete()
   async removeAll() {
-    await this.doctorsService.clearAllDoctors();
-    return { message: 'All doctors removed from database' };
+    console.log('DoctorsController: removeAll endpoint called');
+    try {
+      await this.doctorsService.clearAllDoctors();
+      console.log('DoctorsController: All doctors removed successfully');
+      return { message: 'All doctors removed from database' };
+    } catch (error) {
+      console.error('DoctorsController: Error in removeAll endpoint:', error);
+      throw error;
+    }
   }
 }
