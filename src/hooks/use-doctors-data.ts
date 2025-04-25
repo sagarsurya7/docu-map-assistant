@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Doctor } from '@/types';
 import { toast } from '@/components/ui/use-toast';
@@ -14,23 +13,21 @@ export function useDoctorsData() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        console.log("Attempting to fetch doctors from API...");
-        // Try to fetch doctors from API
+        console.log("Fetching all doctors from database without filters...");
         const apiDoctors = await getDoctors();
         
         if (Array.isArray(apiDoctors) && apiDoctors.length > 0) {
-          console.log("Successfully fetched doctors from API:", apiDoctors.length);
+          console.log(`Successfully fetched ${apiDoctors.length} doctors from database`);
           setAllDoctors(apiDoctors);
           setError(null);
           setUsingFallbackData(false);
           
           toast({
-            title: "Connected to API",
-            description: `Successfully fetched ${apiDoctors.length} doctors from the database.`,
+            title: "Connected to Database",
+            description: `Successfully loaded ${apiDoctors.length} doctors.`,
           });
         } else {
-          // If API returns empty data, show a message
-          console.log("API returned empty data");
+          console.log("Database returned no doctors");
           setAllDoctors([]);
           setError("No doctors found in the database");
           setUsingFallbackData(false);
@@ -42,14 +39,14 @@ export function useDoctorsData() {
           });
         }
       } catch (err) {
-        console.error("Error fetching doctors from API:", err);
+        console.error("Error fetching doctors:", err);
         setAllDoctors([]);
-        setError("Failed to fetch doctors from the API");
+        setError("Failed to fetch doctors from the database");
         setUsingFallbackData(false);
         
         toast({
-          title: "API Error",
-          description: "Could not connect to the doctors database.",
+          title: "Database Error",
+          description: "Could not fetch doctors from the database.",
           variant: "destructive"
         });
       } finally {
@@ -58,7 +55,7 @@ export function useDoctorsData() {
     };
     
     fetchDoctors();
-  }, []);
+  }, []); // Only run once on initial load
 
   const handleSelectDoctor = (doctor: Doctor) => {
     if (doctor && typeof doctor === 'object') {
@@ -69,7 +66,6 @@ export function useDoctorsData() {
     }
   };
 
-  // Helper to check if a value is a valid doctor object
   const isValidDoctor = (value: any): value is Doctor => {
     return (
       value !== null &&
@@ -81,14 +77,12 @@ export function useDoctorsData() {
     );
   };
 
-  // Make sure we always return a valid doctor array even if something goes wrong
   const getSafeDoctors = (): Doctor[] => {
     if (!Array.isArray(allDoctors)) {
       console.warn("allDoctors is not an array, returning empty array");
       return [];
     }
     
-    // Filter out any invalid doctor objects
     return allDoctors.filter(isValidDoctor);
   };
 
