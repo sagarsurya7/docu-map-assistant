@@ -11,8 +11,17 @@ export class DoctorsController {
   async findAll(@Query() filters: DoctorFilterDto) {
     console.log('DoctorsController: findAll endpoint called with filters:', filters);
     try {
+      console.log('DoctorsController: Calling doctorsService.findAll()...');
       const result = await this.doctorsService.findAll(filters);
       console.log(`DoctorsController: findAll completed successfully, returning ${result.length} doctors`);
+      
+      // Log a sample of the data being returned
+      if (result.length > 0) {
+        console.log('DoctorsController: Sample of first doctor:', JSON.stringify(result[0]).substring(0, 200) + "...");
+      } else {
+        console.log('DoctorsController: No doctors found in database');
+      }
+      
       return result;
     } catch (error) {
       console.error('DoctorsController: Error in findAll endpoint:', error);
@@ -26,6 +35,7 @@ export class DoctorsController {
     try {
       const result = await this.doctorsService.getFilterOptions();
       console.log('DoctorsController: getFilterOptions completed successfully');
+      console.log('DoctorsController: Filter options:', result);
       return result;
     } catch (error) {
       console.error('DoctorsController: Error in getFilterOptions endpoint:', error);

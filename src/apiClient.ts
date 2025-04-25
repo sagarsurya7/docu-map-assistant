@@ -31,32 +31,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => {
         console.log(`API Response: ${response.status} from ${response.config.url}`);
-        
-        // Ensure all response data expected to be arrays are arrays
-        if (response.config.url?.includes('/doctors') && !Array.isArray(response.data)) {
-            console.warn('Doctors API did not return an array, converting to array format');
-            // Check if the data is in a nested property first
-            if (response.data && typeof response.data === 'object' && Array.isArray(response.data.doctors)) {
-                response.data = response.data.doctors;
-            } else if (response.data && typeof response.data === 'object') {
-                // If it's an object but not an array, convert to array with that item
-                console.warn('Converting object to single-item array');
-                response.data = [response.data];
-            } else {
-                // If not, set an empty array
-                response.data = [];
-            }
-        }
-        
-        if (response.config.url?.includes('/doctors/filters') && response.data) {
-            // Ensure filter options are always arrays
-            const { specialties = [], cities = [], areas = [] } = response.data;
-            response.data = {
-                specialties: Array.isArray(specialties) ? specialties : [],
-                cities: Array.isArray(cities) ? cities : [],
-                areas: Array.isArray(areas) ? areas : []
-            };
-        }
+        console.log('Response data:', JSON.stringify(response.data).substring(0, 200) + "...");
         
         return response;
     },
@@ -96,11 +71,14 @@ apiClient.interceptors.response.use(
 console.log('Testing connection to backend server...');
 const connectionTest = () => {
     apiClient.get('/health')
-        .then(() => console.log('✅ Backend server connection successful'))
+        .then((response) => {
+            console.log('✅ Backend server connection successful');
+            console.log('Health response:', response.data);
+        })
         .catch(error => {
             if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
                 console.warn('⚠️ Connection issue detected. Make sure your backend server is running.');
-                console.log('The app will function with fallback data if available.');
+                console.warn('The app will function with fallback data if available.');
             } else {
                 console.warn('⚠️ Could not connect to backend server:', error.message);
             }
@@ -110,7 +88,7 @@ const connectionTest = () => {
 // Initial connection test
 connectionTest();
 
-// Re-test connection periodically
+// Re-test connection periodically 
 setInterval(connectionTest, 60000); // Check every minute
 
 export default apiClient;

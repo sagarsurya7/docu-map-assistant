@@ -1,5 +1,5 @@
+
 import { useState, useEffect } from 'react';
-import { fallbackDoctors } from '@/data/doctors';
 import { Doctor } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { getDoctors } from '@/api/doctorService';
@@ -14,58 +14,50 @@ export function useDoctorsData() {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
+        console.log("Attempting to fetch doctors from API...");
         // Try to fetch doctors from API
         const apiDoctors = await getDoctors();
+        
         if (Array.isArray(apiDoctors) && apiDoctors.length > 0) {
           console.log("Successfully fetched doctors from API:", apiDoctors.length);
           setAllDoctors(apiDoctors);
           setError(null);
           setUsingFallbackData(false);
           
-          // Show a toast explaining we're using API data
           toast({
             title: "Connected to API",
-            description: "Successfully fetched doctors from the database.",
+            description: `Successfully fetched ${apiDoctors.length} doctors from the database.`,
           });
         } else {
-          // If API returns empty or invalid data, use fallback
-          console.log("API returned empty or invalid data, using fallback");
-          setAllDoctors(fallbackDoctors);
-          setUsingFallbackData(true);
+          // If API returns empty data, show a message
+          console.log("API returned empty data");
+          setAllDoctors([]);
+          setError("No doctors found in the database");
+          setUsingFallbackData(false);
           
-          // Show a toast explaining we're using fallback data
           toast({
-            title: "Using Local Data",
-            description: "Connected to local doctors database. API returned empty data.",
+            title: "No Doctors Found",
+            description: "The database contains no doctor records.",
+            variant: "destructive"
           });
         }
       } catch (err) {
         console.error("Error fetching doctors from API:", err);
-        // Use fallback data if API fails
-        setAllDoctors(fallbackDoctors);
-        setUsingFallbackData(true);
+        setAllDoctors([]);
+        setError("Failed to fetch doctors from the API");
+        setUsingFallbackData(false);
         
         toast({
-          title: "Using Local Data",
-          description: "Connected to local doctors database. Backend connection failed.",
+          title: "API Error",
+          description: "Could not connect to the doctors database.",
+          variant: "destructive"
         });
       } finally {
         setIsLoading(false);
-        
-        // Show welcome toast
-        toast({
-          title: "Welcome to AI Doctor Nearby",
-          description: "Find specialists near you and get AI-powered health guidance",
-        });
       }
     };
     
-    // Wait a bit before fetching to simulate loading state
-    const timer = setTimeout(() => {
-      fetchDoctors();
-    }, 1500);
-    
-    return () => clearTimeout(timer);
+    fetchDoctors();
   }, []);
 
   const handleSelectDoctor = (doctor: Doctor) => {
