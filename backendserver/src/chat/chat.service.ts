@@ -1,3 +1,4 @@
+
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -201,7 +202,7 @@ export class ChatService {
   private mapSymptomsToSpecialties(symptoms: string[]): string[] {
     // Updated mapping to be more accurate for symptoms
     const symptomToSpecialty = {
-      'headache': ['Neurology', 'General Medicine'], // Removed Cardiology
+      'headache': ['Neurology', 'General Medicine'],
       'fever': ['General Medicine', 'Infectious Disease'],
       'cough': ['Pulmonology', 'General Medicine', 'ENT (Ear, Nose, Throat)'],
       'sore throat': ['ENT (Ear, Nose, Throat)', 'General Medicine'],
@@ -269,3 +270,4 @@ These symptoms could indicate various conditions and a medical professional can 
     return this.chatModel.find().sort({ timestamp: -1 }).exec();
   }
 }
+
