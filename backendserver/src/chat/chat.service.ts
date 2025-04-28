@@ -63,7 +63,7 @@ export class ChatService {
           const cityNames = cities.map(city => city.name).join(', ');
           return { response: `I couldn't find any doctors in ${locationInfo} at the moment. We have doctors in ${cityNames}. Would you like to try another location?` };
         }
-        return { response: "I couldn't find any doctors at the moment. Could you please share your city so I can find doctors near you?" };
+        return { response: "I couldn't find any doctors that match your criteria. You may want to try different search options or check back later when more doctors are available." };
       }
       
       const doctor = doctors[0];
@@ -78,13 +78,11 @@ export class ChatService {
       const specialties = this.mapSymptomsToSpecialties(symptoms);
       
       if (specialties.length > 0) {
-        // Ask for location if not provided yet
+        // Modified approach - don't ask for location immediately
+        // Just provide general advice first
         if (!locationInfo) {
-          const cities = await this.locationsService.findAllCities();
-          const cityNames = cities.map(city => city.name).join(', ');
-          
           return { 
-            response: `I notice you mentioned ${symptoms.join(', ')}. To suggest doctors in your area, could you please let me know which city you're located in? We have doctors in ${cityNames}.` 
+            response: `I notice you mentioned ${symptoms.join(', ')}. Based on these symptoms, you might want to consult a ${specialties.join(' or ')}. Would you like me to find doctors for you? If so, let me know which city you're in, and I can provide specific recommendations.` 
           };
         }
         
@@ -122,38 +120,18 @@ export class ChatService {
       }
       
       // If we have symptoms but couldn't map to specialties
-      if (locationInfo) {
-        return { 
-          response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms? For example, when did they start and how severe are they?` 
-        };
-      } else {
-        // Get available cities to suggest
-        const cities = await this.locationsService.findAllCities();
-        const cityNames = cities.map(city => city.name).join(', ');
-        
-        return { 
-          response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms and which city you're located in so I can suggest appropriate doctors? We have doctors in ${cityNames}.` 
-        };
-      }
+      return { 
+        response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms? For example, when did they start and how severe are they?` 
+      };
     }
     
     // General symptom inquiries
     if (message.includes('symptom') || message.includes('pain') || message.includes('sick') || 
         message.includes('hurt') || message.includes('ache')) {
       
-      if (locationInfo) {
-        return { 
-          response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance and recommend doctors in ${locationInfo}.` 
-        };
-      } else {
-        // Get available cities to suggest
-        const cities = await this.locationsService.findAllCities();
-        const cityNames = cities.map(city => city.name).join(', ');
-        
-        return { 
-          response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance. Additionally, it would help if you share your location so I can recommend nearby doctors. We have doctors in ${cityNames}.` 
-        };
-      }
+      return { 
+        response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance and recommend appropriate healthcare professionals.` 
+      };
     }
     
     // If location is provided but no specific request
@@ -163,12 +141,9 @@ export class ChatService {
       };
     }
     
-    // Get available cities to suggest
-    const cities = await this.locationsService.findAllCities();
-    const cityNames = cities.map(city => city.name).join(', ');
-    
+    // Default response without asking for location
     return { 
-      response: `I understand you're looking for health information. Could you provide more details about what you need help with? Also, sharing your location (we have doctors in ${cityNames}) will help me provide more relevant recommendations.` 
+      response: `I understand you're looking for health information. Could you provide more details about what you need help with? I can provide general health advice or help you find appropriate doctors.` 
     };
   }
   
@@ -275,7 +250,7 @@ Would you like to book an appointment with any of these doctors?`;
 I found these doctors who could help:
 - ${doctorsList}
 
-Would you like to book an appointment with any of these doctors? If these doctors aren't in your area, please let me know your city or area for more relevant recommendations.`;
+Would you like to book an appointment with any of these doctors?`;
       }
     }
     
@@ -283,11 +258,10 @@ Would you like to book an appointment with any of these doctors? If these doctor
     if (location) {
       return `Based on your symptom(s) of ${symptomsList}, I recommend consulting a ${specialtiesList}. 
 These symptoms could indicate various conditions and a medical professional can provide proper diagnosis and treatment. 
-I couldn't find any specialists in ${location} in our database. Would you like to try another location?`;
+I couldn't find any specialists in ${location} in our database.`;
     } else {
       return `Based on your symptom(s) of ${symptomsList}, I recommend consulting a ${specialtiesList}. 
-These symptoms could indicate various conditions and a medical professional can provide proper diagnosis and treatment. 
-Please let me know your city or area so I can help you find a doctor near you.`;
+These symptoms could indicate various conditions and a medical professional can provide proper diagnosis and treatment.`;
     }
   }
 

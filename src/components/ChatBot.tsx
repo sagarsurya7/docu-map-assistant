@@ -13,10 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     ...initialMessages,
-    // Add a hint message about location sharing with specific cities
+    // Update the location tip to be less pushy
     {
       role: 'assistant',
-      content: 'Tip: Sharing your location (like "I\'m in Mumbai", "I live in Bangalore", "I\'m from Delhi", or "I\'m in Pune") helps me find doctors near you.'
+      content: 'How can I help you with your health concerns today? You can ask about symptoms, find doctors, or get health advice.'
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
