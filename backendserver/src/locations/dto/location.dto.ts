@@ -10,5 +10,6 @@ export class AreaDto {
 
 export class LocationFilterDto {
   city?: string;
-  skipLocationPrompt?: boolean; // Add this to allow skipping location prompts
+  area?: string;
+  skipLocationPrompt?: boolean;
 }

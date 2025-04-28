@@ -9,6 +9,9 @@ export class ChatSession extends Document {
 
   @Prop({ required: false })
   city: string;
+  
+  @Prop({ required: false })
+  area: string;
 
   @Prop({ default: Date.now })
   lastUpdated: Date;

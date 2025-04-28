@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -57,8 +56,8 @@ export class ChatService {
       return { response: "Hello! I'm your AI health assistant. How can I help you today?" };
     }
     
-    // Check for location in this message
-    const locationInfo = await this.extractLocation(message);
+    // Extract and validate location data
+    const locationInfo = await this.smartExtractLocation(message);
     
     // If location is found in this message, update the session
     if (locationInfo) {
@@ -67,8 +66,8 @@ export class ChatService {
       console.log(`Updated session ${session.sessionId} with city: ${locationInfo}`);
     }
     
-    // If we don't have a location yet, and this is a location inquiry, ask for location
-    if (!session.city && this.isLocationInquiry(message)) {
+    // If we don't have a location yet, and this is a location inquiry or health question that needs location context, ask for location
+    if (!session.city && this.needsLocationContext(message)) {
       const cities = await this.locationsService.findAllCities();
       const cityNames = cities.map(city => city.name).join(', ');
       return { response: `To provide you with the most relevant doctor recommendations, could you please share your city? We have doctors in ${cityNames}.` };
@@ -185,12 +184,67 @@ export class ChatService {
     };
   }
   
+  // Determine if this message type requires location context to provide good answers
+  private needsLocationContext(message: string): boolean {
+    // Check for explicit location inquiries
+    if (this.isLocationInquiry(message)) {
+      return true;
+    }
+    
+    // Check for symptoms - we want location to recommend doctors
+    const symptoms = this.extractSymptoms(message);
+    if (symptoms.length > 0) {
+      return true;
+    }
+    
+    // Check for doctor or specialist requests
+    if (message.includes('doctor') || message.includes('specialist') || 
+        message.includes('clinic') || message.includes('hospital')) {
+      return true;
+    }
+    
+    // For generic health queries, we don't need to prompt for location
+    return false;
+  }
+  
   private isLocationInquiry(message: string): boolean {
     const locationPatterns = [
       'where', 'location', 'city', 'area', 'near me', 'nearby', 'closest'
     ];
     
     return locationPatterns.some(pattern => message.includes(pattern));
+  }
+  
+  // Enhanced location extraction that validates against database
+  private async smartExtractLocation(message: string): Promise<string | null> {
+    const words = message.split(/\s+/);
+    
+    // Check each word against our database of cities and areas
+    for (const word of words) {
+      // Skip very short words or common words
+      if (word.length < 3 || ['the', 'and', 'for', 'this', 'that'].includes(word)) {
+        continue;
+      }
+      
+      // Check if word is a city
+      const isCity = await this.locationsService.isValidCity(word);
+      if (isCity) {
+        // Get the properly cased city name
+        const cities = await this.locationsService.findAllCities();
+        return cities.find(city => 
+          city.name.toLowerCase() === word.toLowerCase()
+        )?.name || null;
+      }
+      
+      // Check if word is an area, and if so, return its city
+      const areaCheck = await this.locationsService.isValidArea(word);
+      if (areaCheck.isValid && areaCheck.city) {
+        return areaCheck.city;
+      }
+    }
+    
+    // If we reach here, check the old method as a fallback
+    return this.extractLocation(message);
   }
   
   private async extractLocation(message: string): Promise<string | null> {
@@ -237,7 +291,6 @@ export class ChatService {
   }
   
   private mapSymptomsToSpecialties(symptoms: string[]): string[] {
-    // Updated mapping to be more accurate for symptoms
     const symptomToSpecialty = {
       'headache': ['Neurology', 'General Medicine'],
       'fever': ['General Medicine', 'Infectious Disease'],
