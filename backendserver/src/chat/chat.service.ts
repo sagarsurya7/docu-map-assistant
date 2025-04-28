@@ -52,13 +52,31 @@ export class ChatService {
       const specialties = this.mapSymptomsToSpecialties(symptoms);
       
       if (specialties.length > 0) {
-        const doctors = await this.doctorsService.findAll({ 
-          specialty: { $in: specialties },
-          available: true 
+        // Modified - Now we'll fetch doctors for each specialty individually and combine the results
+        let allDoctors = [];
+        
+        // Fetch doctors for each specialty and combine results
+        for (const specialty of specialties) {
+          const doctorsForSpecialty = await this.doctorsService.findAll({ 
+            specialty: specialty,
+            available: true 
+          });
+          
+          allDoctors = [...allDoctors, ...doctorsForSpecialty];
+        }
+        
+        // Remove duplicates (if any)
+        const uniqueDoctorsMap = new Map();
+        allDoctors.forEach(doctor => {
+          if (!uniqueDoctorsMap.has(doctor.id)) {
+            uniqueDoctorsMap.set(doctor.id, doctor);
+          }
         });
         
+        const uniqueDoctors = Array.from(uniqueDoctorsMap.values());
+        
         return {
-          response: this.generateSymptomResponse(symptoms, specialties, doctors)
+          response: this.generateSymptomResponse(symptoms, specialties, uniqueDoctors)
         };
       }
       
