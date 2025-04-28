@@ -11,7 +11,14 @@ import { sendChatMessage } from '@/api/chatService';
 import { useToast } from '@/components/ui/use-toast';
 
 const ChatBot: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    ...initialMessages,
+    // Add a hint message about location sharing
+    {
+      role: 'assistant',
+      content: 'Tip: Sharing your location (like "I\'m in Mumbai" or "I live in Bangalore") helps me find doctors near you.'
+    }
+  ]);
   const [isTyping, setIsTyping] = useState(false);
   const isMounted = useRef(true);
   const { toast } = useToast();
