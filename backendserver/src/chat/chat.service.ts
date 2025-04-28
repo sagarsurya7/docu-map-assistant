@@ -1,3 +1,4 @@
+
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -46,6 +47,38 @@ export class ChatService {
     }
     
     return session;
+  }
+  
+  // Utility method to check if this message type requires location context
+  private needsLocationContext(message: string): boolean {
+    // Check for explicit location inquiries
+    if (this.isLocationInquiry(message)) {
+      return true;
+    }
+    
+    // Check for symptoms - we want location to recommend doctors
+    const symptoms = this.extractSymptoms(message);
+    if (symptoms.length > 0) {
+      return true;
+    }
+    
+    // Check for doctor or specialist requests
+    if (message.includes('doctor') || message.includes('specialist') || 
+        message.includes('clinic') || message.includes('hospital')) {
+      return true;
+    }
+    
+    // For generic health queries, we don't need to prompt for location
+    return false;
+  }
+  
+  // Check if message is a location inquiry
+  private isLocationInquiry(message: string): boolean {
+    const locationPatterns = [
+      'where', 'location', 'city', 'area', 'near me', 'nearby', 'closest'
+    ];
+    
+    return locationPatterns.some(pattern => message.includes(pattern));
   }
 
   private async generateResponse(message: string, session: ChatSession): Promise<{ response: string }> {
@@ -183,38 +216,7 @@ export class ChatService {
       response: `I understand you're looking for health information. Could you provide more details about what you need help with? I can provide general health advice or help you find appropriate doctors.` 
     };
   }
-  
-  // Determine if this message type requires location context to provide good answers
-  private needsLocationContext(message: string): boolean {
-    // Check for explicit location inquiries
-    if (this.isLocationInquiry(message)) {
-      return true;
-    }
-    
-    // Check for symptoms - we want location to recommend doctors
-    const symptoms = this.extractSymptoms(message);
-    if (symptoms.length > 0) {
-      return true;
-    }
-    
-    // Check for doctor or specialist requests
-    if (message.includes('doctor') || message.includes('specialist') || 
-        message.includes('clinic') || message.includes('hospital')) {
-      return true;
-    }
-    
-    // For generic health queries, we don't need to prompt for location
-    return false;
-  }
-  
-  private isLocationInquiry(message: string): boolean {
-    const locationPatterns = [
-      'where', 'location', 'city', 'area', 'near me', 'nearby', 'closest'
-    ];
-    
-    return locationPatterns.some(pattern => message.includes(pattern));
-  }
-  
+
   // Enhanced location extraction that validates against database
   private async smartExtractLocation(message: string): Promise<string | null> {
     const words = message.split(/\s+/);
@@ -247,6 +249,7 @@ export class ChatService {
     return this.extractLocation(message);
   }
   
+  // Extract location from message
   private async extractLocation(message: string): Promise<string | null> {
     // Get all cities from the database
     const cities = await this.locationsService.findAllCities();
@@ -263,6 +266,7 @@ export class ChatService {
     return null;
   }
   
+  // Extract symptoms from message
   private extractSymptoms(message: string): string[] {
     const commonSymptoms = {
       'headache': ['headache', 'head ache', 'head pain', 'migraine'],
@@ -290,6 +294,7 @@ export class ChatService {
     return foundSymptoms;
   }
   
+  // Map symptoms to specialties
   private mapSymptomsToSpecialties(symptoms: string[]): string[] {
     const symptomToSpecialty = {
       'headache': ['Neurology', 'General Medicine'],
@@ -315,6 +320,7 @@ export class ChatService {
     return Array.from(specialties);
   }
   
+  // Generate symptom response
   private generateSymptomResponse(
     symptoms: string[], 
     specialties: string[], 
