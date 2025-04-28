@@ -5,17 +5,23 @@ import { Model } from 'mongoose';
 import { DoctorsService } from '../doctors/doctors.service';
 import { LocationsService } from '../locations/locations.service';
 import { Chat } from './schemas/chat.schema';
+import { ChatSession } from './schemas/chat-session.schema';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<Chat>,
+    @InjectModel(ChatSession.name) private chatSessionModel: Model<ChatSession>,
     private readonly doctorsService: DoctorsService,
     private readonly locationsService: LocationsService
   ) {}
 
-  async processMessage(message: string): Promise<{ response: string }> {
-    const response = await this.generateResponse(message);
+  async processMessage(message: string, sessionId: string): Promise<{ response: string, sessionId: string }> {
+    // Get or create session
+    let session = await this.getOrCreateSession(sessionId);
+    
+    // Process the message with session context
+    const response = await this.generateResponse(message, session);
     
     // Save the chat interaction
     await this.chatModel.create({
@@ -24,10 +30,26 @@ export class ChatService {
       timestamp: new Date()
     });
 
-    return response;
+    return { 
+      response: response.response, 
+      sessionId: session.sessionId 
+    };
   }
 
-  private async generateResponse(message: string): Promise<{ response: string }> {
+  private async getOrCreateSession(sessionId: string): Promise<ChatSession> {
+    let session = await this.chatSessionModel.findOne({ sessionId }).exec();
+    
+    if (!session) {
+      session = await this.chatSessionModel.create({
+        sessionId,
+        lastUpdated: new Date()
+      });
+    }
+    
+    return session;
+  }
+
+  private async generateResponse(message: string, session: ChatSession): Promise<{ response: string }> {
     message = message.toLowerCase();
     
     // Check for greetings
@@ -35,41 +57,51 @@ export class ChatService {
       return { response: "Hello! I'm your AI health assistant. How can I help you today?" };
     }
     
-    // Location inquiry for better doctor recommendations
-    if (this.isLocationInquiry(message)) {
+    // Check for location in this message
+    const locationInfo = await this.extractLocation(message);
+    
+    // If location is found in this message, update the session
+    if (locationInfo) {
+      session.city = locationInfo;
+      await session.save();
+      console.log(`Updated session ${session.sessionId} with city: ${locationInfo}`);
+    }
+    
+    // If we don't have a location yet, and this is a location inquiry, ask for location
+    if (!session.city && this.isLocationInquiry(message)) {
       const cities = await this.locationsService.findAllCities();
       const cityNames = cities.map(city => city.name).join(', ');
       return { response: `To provide you with the most relevant doctor recommendations, could you please share your city? We have doctors in ${cityNames}.` };
     }
-
-    // Check for location information
-    const locationInfo = await this.extractLocation(message);
-    console.log("Extracted location:", locationInfo);
+    
+    // Use the session's stored location if available
+    const currentLocation = session.city || locationInfo;
+    console.log("Using location from session or message:", currentLocation);
     
     // Check for doctors or specialists requests
     if (message.includes('doctor') || message.includes('specialist')) {
-      // If location is provided, use it for filtering
+      // If location is provided (from session or current message), use it for filtering
       const filters: any = { available: true };
-      if (locationInfo) {
-        filters.city = locationInfo;
+      if (currentLocation) {
+        filters.city = currentLocation;
       }
       
       const doctors = await this.doctorsService.findAll(filters);
       console.log(`Found ${doctors.length} doctors with filters:`, filters);
       
       if (doctors.length === 0) {
-        if (locationInfo) {
+        if (currentLocation) {
           // Get all available cities to provide options
           const cities = await this.locationsService.findAllCities();
           const cityNames = cities.map(city => city.name).join(', ');
-          return { response: `I couldn't find any doctors in ${locationInfo} at the moment. We have doctors in ${cityNames}. Would you like to try another location?` };
+          return { response: `I couldn't find any doctors in ${currentLocation} at the moment. We have doctors in ${cityNames}. Would you like to try another location?` };
         }
         return { response: "I couldn't find any doctors that match your criteria. You may want to try different search options or check back later when more doctors are available." };
       }
       
       const doctor = doctors[0];
       return { 
-        response: `I recommend consulting Dr. ${doctor.name}, a ${doctor.specialty} specialist with ${doctor.experience} years of experience${locationInfo ? ` in ${locationInfo}` : ''}. Would you like to know more about them?` 
+        response: `I recommend consulting Dr. ${doctor.name}, a ${doctor.specialty} specialist with ${doctor.experience} years of experience${currentLocation ? ` in ${currentLocation}` : ''}. Would you like to know more about them?` 
       };
     }
     
@@ -79,17 +111,16 @@ export class ChatService {
       const specialties = this.mapSymptomsToSpecialties(symptoms);
       
       if (specialties.length > 0) {
-        // Modified approach - don't ask for location immediately
-        // Just provide general advice first
-        if (!locationInfo) {
+        // If we don't have a location yet, provide general advice first
+        if (!currentLocation) {
           return { 
             response: `I notice you mentioned ${symptoms.join(', ')}. Based on these symptoms, you might want to consult a ${specialties.join(' or ')}. Would you like me to find doctors for you? If so, let me know which city you're in, and I can provide specific recommendations.` 
           };
         }
         
-        console.log(`Looking for doctors in specialties: ${specialties.join(', ')} in location: ${locationInfo}`);
+        console.log(`Looking for doctors in specialties: ${specialties.join(', ')} in location: ${currentLocation}`);
         
-        // Modified - Now we'll fetch doctors for each specialty individually and combine the results
+        // Fetch doctors for each specialty individually and combine the results
         let allDoctors = [];
         
         // Fetch doctors for each specialty and combine results
@@ -97,10 +128,10 @@ export class ChatService {
           const doctorsForSpecialty = await this.doctorsService.findAll({ 
             specialty: specialty,
             available: true,
-            ...(locationInfo ? { city: locationInfo } : {})
+            ...(currentLocation ? { city: currentLocation } : {})
           });
           
-          console.log(`Found ${doctorsForSpecialty.length} doctors for specialty ${specialty} in ${locationInfo || 'any location'}`);
+          console.log(`Found ${doctorsForSpecialty.length} doctors for specialty ${specialty} in ${currentLocation || 'any location'}`);
           allDoctors = [...allDoctors, ...doctorsForSpecialty];
         }
         
@@ -116,7 +147,7 @@ export class ChatService {
         console.log(`Final unique doctors count: ${uniqueDoctors.length}`);
         
         return {
-          response: this.generateSymptomResponse(symptoms, specialties, uniqueDoctors, locationInfo)
+          response: this.generateSymptomResponse(symptoms, specialties, uniqueDoctors, currentLocation)
         };
       }
       
@@ -130,15 +161,21 @@ export class ChatService {
     if (message.includes('symptom') || message.includes('pain') || message.includes('sick') || 
         message.includes('hurt') || message.includes('ache')) {
       
+      if (currentLocation) {
+        return { 
+          response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance and recommend appropriate healthcare professionals in ${currentLocation}.` 
+        };
+      }
+      
       return { 
         response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance and recommend appropriate healthcare professionals.` 
       };
     }
     
     // If location is provided but no specific request
-    if (locationInfo) {
+    if (currentLocation) {
       return { 
-        response: `Thank you for sharing that you're in ${locationInfo}. How can I assist you with your health concerns today? If you're experiencing any symptoms, please describe them so I can recommend appropriate doctors in your area.` 
+        response: `Thank you for sharing that you're in ${currentLocation}. How can I assist you with your health concerns today? If you're experiencing any symptoms, please describe them so I can recommend appropriate doctors in your area.` 
       };
     }
     
@@ -269,5 +306,8 @@ These symptoms could indicate various conditions and a medical professional can 
   async getChatHistory(): Promise<Chat[]> {
     return this.chatModel.find().sort({ timestamp: -1 }).exec();
   }
+  
+  async getSessionInfo(sessionId: string): Promise<ChatSession | null> {
+    return this.chatSessionModel.findOne({ sessionId }).exec();
+  }
 }
-

@@ -13,7 +13,6 @@ import { useToast } from '@/components/ui/use-toast';
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     ...initialMessages,
-    // Update the location tip to be less pushy
     {
       role: 'assistant',
       content: 'How can I help you with your health concerns today? You can ask about symptoms, find doctors, or get health advice.'
