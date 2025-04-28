@@ -1,15 +1,16 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DoctorsService } from '../doctors/doctors.service';
+import { LocationsService } from '../locations/locations.service';
 import { Chat } from './schemas/chat.schema';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectModel(Chat.name) private chatModel: Model<Chat>,
-    private readonly doctorsService: DoctorsService
+    private readonly doctorsService: DoctorsService,
+    private readonly locationsService: LocationsService
   ) {}
 
   async processMessage(message: string): Promise<{ response: string }> {
@@ -35,11 +36,13 @@ export class ChatService {
     
     // Location inquiry for better doctor recommendations
     if (this.isLocationInquiry(message)) {
-      return { response: "To provide you with the most relevant doctor recommendations, could you please share your city or area?" };
+      const cities = await this.locationsService.findAllCities();
+      const cityNames = cities.map(city => city.name).join(', ');
+      return { response: `To provide you with the most relevant doctor recommendations, could you please share your city? We have doctors in ${cityNames}.` };
     }
 
     // Check for location information
-    const locationInfo = this.extractLocation(message);
+    const locationInfo = await this.extractLocation(message);
     console.log("Extracted location:", locationInfo);
     
     // Check for doctors or specialists requests
@@ -55,7 +58,10 @@ export class ChatService {
       
       if (doctors.length === 0) {
         if (locationInfo) {
-          return { response: `I couldn't find any doctors in ${locationInfo} at the moment. Would you like to try another location?` };
+          // Get all available cities to provide options
+          const cities = await this.locationsService.findAllCities();
+          const cityNames = cities.map(city => city.name).join(', ');
+          return { response: `I couldn't find any doctors in ${locationInfo} at the moment. We have doctors in ${cityNames}. Would you like to try another location?` };
         }
         return { response: "I couldn't find any doctors at the moment. Could you please share your city so I can find doctors near you?" };
       }
@@ -74,8 +80,11 @@ export class ChatService {
       if (specialties.length > 0) {
         // Ask for location if not provided yet
         if (!locationInfo) {
+          const cities = await this.locationsService.findAllCities();
+          const cityNames = cities.map(city => city.name).join(', ');
+          
           return { 
-            response: `I notice you mentioned ${symptoms.join(', ')}. To suggest doctors in your area, could you please let me know which city you're located in?` 
+            response: `I notice you mentioned ${symptoms.join(', ')}. To suggest doctors in your area, could you please let me know which city you're located in? We have doctors in ${cityNames}.` 
           };
         }
         
@@ -118,8 +127,12 @@ export class ChatService {
           response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms? For example, when did they start and how severe are they?` 
         };
       } else {
+        // Get available cities to suggest
+        const cities = await this.locationsService.findAllCities();
+        const cityNames = cities.map(city => city.name).join(', ');
+        
         return { 
-          response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms and which city you're located in so I can suggest appropriate doctors?` 
+          response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms and which city you're located in so I can suggest appropriate doctors? We have doctors in ${cityNames}.` 
         };
       }
     }
@@ -133,8 +146,12 @@ export class ChatService {
           response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance and recommend doctors in ${locationInfo}.` 
         };
       } else {
+        // Get available cities to suggest
+        const cities = await this.locationsService.findAllCities();
+        const cityNames = cities.map(city => city.name).join(', ');
+        
         return { 
-          response: "I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance. Additionally, it would help if you share your location so I can recommend nearby doctors." 
+          response: `I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance. Additionally, it would help if you share your location so I can recommend nearby doctors. We have doctors in ${cityNames}.` 
         };
       }
     }
@@ -146,8 +163,12 @@ export class ChatService {
       };
     }
     
+    // Get available cities to suggest
+    const cities = await this.locationsService.findAllCities();
+    const cityNames = cities.map(city => city.name).join(', ');
+    
     return { 
-      response: "I understand you're looking for health information. Could you provide more details about what you need help with?" 
+      response: `I understand you're looking for health information. Could you provide more details about what you need help with? Also, sharing your location (we have doctors in ${cityNames}) will help me provide more relevant recommendations.` 
     };
   }
   
@@ -159,17 +180,16 @@ export class ChatService {
     return locationPatterns.some(pattern => message.includes(pattern));
   }
   
-  private extractLocation(message: string): string | null {
-    // Common Indian cities
-    const cities = [
-      'mumbai', 'delhi', 'bangalore', 'pune', 'hyderabad', 'chennai', 
-      'kolkata', 'ahmedabad', 'jaipur', 'surat', 'lucknow', 'kanpur',
-      'nagpur', 'indore', 'thane', 'bhopal'
-    ];
+  private async extractLocation(message: string): Promise<string | null> {
+    // Get all cities from the database
+    const cities = await this.locationsService.findAllCities();
+    const cityNames = cities.map(city => city.name.toLowerCase());
     
-    for (const city of cities) {
-      if (message.includes(city)) {
-        return city;
+    // Check if any city name is mentioned in the message
+    for (const cityName of cityNames) {
+      if (message.includes(cityName.toLowerCase())) {
+        // Return the properly capitalized city name
+        return cities.find(city => city.name.toLowerCase() === cityName)?.name || null;
       }
     }
     
