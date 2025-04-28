@@ -33,6 +33,14 @@ export class ChatService {
       return { response: "Hello! I'm your AI health assistant. How can I help you today?" };
     }
     
+    // Location inquiry for better doctor recommendations
+    if (this.isLocationInquiry(message)) {
+      return { response: "To provide you with the most relevant doctor recommendations, could you please share your city or area?" };
+    }
+
+    // Check for location information to save for future use
+    const locationInfo = this.extractLocation(message);
+    
     // Check for doctors or specialists requests
     if (message.includes('doctor') || message.includes('specialist')) {
       const doctors = await this.doctorsService.findAll({ available: true });
@@ -52,6 +60,13 @@ export class ChatService {
       const specialties = this.mapSymptomsToSpecialties(symptoms);
       
       if (specialties.length > 0) {
+        // Ask for location if not provided yet
+        if (!locationInfo) {
+          return { 
+            response: `I notice you mentioned ${symptoms.join(', ')}. To suggest doctors in your area, could you please let me know which city you're located in?` 
+          };
+        }
+        
         // Modified - Now we'll fetch doctors for each specialty individually and combine the results
         let allDoctors = [];
         
@@ -81,7 +96,7 @@ export class ChatService {
       }
       
       return { 
-        response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms? For example, when did they start and how severe are they?` 
+        response: `I notice you mentioned ${symptoms.join(', ')}. Could you tell me more about your symptoms? For example, when did they start and how severe are they? Also, which city are you located in so I can suggest appropriate doctors?` 
       };
     }
     
@@ -89,13 +104,38 @@ export class ChatService {
     if (message.includes('symptom') || message.includes('pain') || message.includes('sick') || 
         message.includes('hurt') || message.includes('ache')) {
       return { 
-        response: "I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance." 
+        response: "I'm sorry to hear that you're not feeling well. Could you please describe your symptoms in more detail? This will help me provide better assistance. Additionally, it would help if you share your location so I can recommend nearby doctors." 
       };
     }
     
     return { 
       response: "I understand you're looking for health information. Could you provide more details about what you need help with?" 
     };
+  }
+  
+  private isLocationInquiry(message: string): boolean {
+    const locationPatterns = [
+      'where', 'location', 'city', 'area', 'near me', 'nearby', 'closest'
+    ];
+    
+    return locationPatterns.some(pattern => message.includes(pattern));
+  }
+  
+  private extractLocation(message: string): string | null {
+    // Common Indian cities
+    const cities = [
+      'mumbai', 'delhi', 'bangalore', 'pune', 'hyderabad', 'chennai', 
+      'kolkata', 'ahmedabad', 'jaipur', 'surat', 'lucknow', 'kanpur',
+      'nagpur', 'indore', 'thane', 'bhopal'
+    ];
+    
+    for (const city of cities) {
+      if (message.includes(city)) {
+        return city;
+      }
+    }
+    
+    return null;
   }
   
   private extractSymptoms(message: string): string[] {
@@ -126,8 +166,9 @@ export class ChatService {
   }
   
   private mapSymptomsToSpecialties(symptoms: string[]): string[] {
+    // Updated mapping to be more accurate for symptoms
     const symptomToSpecialty = {
-      'headache': ['Neurology', 'General Medicine'],
+      'headache': ['Neurology', 'General Medicine'], // Removed Cardiology
       'fever': ['General Medicine', 'Infectious Disease'],
       'cough': ['Pulmonology', 'General Medicine', 'ENT (Ear, Nose, Throat)'],
       'sore throat': ['ENT (Ear, Nose, Throat)', 'General Medicine'],
@@ -157,20 +198,20 @@ export class ChatService {
     // If we have doctors for these specialties
     if (doctors && doctors.length > 0) {
       const doctorsList = doctors.slice(0, 3).map(doctor => 
-        `Dr. ${doctor.name} (${doctor.specialty}, ${doctor.experience} years experience)`
+        `Dr. ${doctor.name} (${doctor.specialty}, ${doctor.experience} years experience, ${doctor.city || 'location not specified'})`
       ).join('\n- ');
       
       return `Based on your symptom(s) of ${symptomsList}, you might want to consult a ${specialtiesList}. 
 I found these doctors who could help:
 - ${doctorsList}
 
-Would you like to book an appointment with any of these doctors?`;
+Would you like to book an appointment with any of these doctors? If these doctors aren't in your area, please let me know your city or area for more relevant recommendations.`;
     }
     
     // If no specific doctors found
     return `Based on your symptom(s) of ${symptomsList}, I recommend consulting a ${specialtiesList}. 
 These symptoms could indicate various conditions and a medical professional can provide proper diagnosis and treatment. 
-Would you like me to help you find a doctor in your area?`;
+Please let me know your city or area so I can help you find a doctor near you.`;
   }
 
   async getChatHistory(): Promise<Chat[]> {
