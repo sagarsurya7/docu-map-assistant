@@ -1,11 +1,10 @@
-
 import { ChatMessage, Doctor } from '@/types';
 
 // Export initial messages for chatbot
 export const initialMessages: ChatMessage[] = [
   {
     role: 'assistant',
-    content: 'Hello! I\'m your AI health assistant. How can I help you today?'
+    content: 'Hello! I\'m your AI health assistant. To provide better recommendations, could you please tell me which city you are in? We have doctors in Mumbai, Delhi, Bangalore, and Pune.'
   }
 ];
 

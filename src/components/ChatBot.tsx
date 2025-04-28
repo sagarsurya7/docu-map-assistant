@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -12,11 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    ...initialMessages,
-    {
-      role: 'assistant',
-      content: 'How can I help you with your health concerns today? You can ask about symptoms, find doctors, or get health advice.'
-    }
+    ...initialMessages
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const isMounted = useRef(true);
@@ -30,7 +25,6 @@ const ChatBot: React.FC = () => {
   }, []);
 
   const handleSendMessage = async (input: string) => {
-    // Add user message
     const userMessage: ChatMessage = {
       role: 'user',
       content: input
@@ -40,7 +34,6 @@ const ChatBot: React.FC = () => {
     setIsTyping(true);
     
     try {
-      // Send message to backend
       const response = await sendChatMessage(input);
       
       if (isMounted.current) {
