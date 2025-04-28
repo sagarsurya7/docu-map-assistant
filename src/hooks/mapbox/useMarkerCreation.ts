@@ -9,7 +9,8 @@ export const createDoctorMarker = (
   doctor: Doctor,
   isSelected: boolean,
   map: any,
-  onCreatePopup: (popup: any) => void
+  onCreatePopup: (popup: any) => void,
+  onMarkerClick?: (doctor: Doctor) => void
 ): any | null => {
   try {
     if (!window.mapboxgl || !isMapValid(map)) {
@@ -65,6 +66,13 @@ export const createDoctorMarker = (
       // Create the marker
       const marker = new window.mapboxgl.Marker(el)
         .setLngLat([doctor.location.lng, doctor.location.lat]);
+      
+      // Add click handler if provided
+      if (onMarkerClick) {
+        el.addEventListener('click', () => {
+          onMarkerClick(doctor);
+        });
+      }
         
       // Only add popup to marker if map is still valid
       try {

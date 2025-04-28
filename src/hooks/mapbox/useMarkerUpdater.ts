@@ -2,7 +2,7 @@
 import { useCallback, useRef } from 'react';
 import { Doctor } from '@/types';
 import { isMapValid } from './utils';
-import { createDoctorMarker, flyToSelectedDoctor } from './useMarkerCreation';
+import { createDoctorMarker } from './useMarkerCreation';
 
 /**
  * Hook for managing marker updates with retry logic
@@ -94,15 +94,6 @@ export const useMarkerUpdater = (
               console.log(`Successfully added ${isSelected ? 'blue' : 'red'} marker for doctor ${doctor.id}`);
             }
           });
-        
-        // Fly to selected doctor after all markers are added
-        if (selectedDoctor && isMapValid(map)) {
-          setTimeout(() => {
-            if (isMapValid(map) && mountedRef.current) {
-              flyToSelectedDoctor(selectedDoctor, map);
-            }
-          }, 50);
-        }
       }
       
       if (mountedRef.current) {

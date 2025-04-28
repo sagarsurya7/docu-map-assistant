@@ -1,20 +1,49 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
-/**
- * Hook for managing marker and popup cleanup
- */
 export const useMarkerCleanup = (mountedRef: React.RefObject<boolean>) => {
   const [markers, setMarkers] = useState<any[]>([]);
   const [popups, setPopups] = useState<any[]>([]);
+  const markersRef = useRef<any[]>([]);
+  const popupsRef = useRef<any[]>([]);
   
-  // Function to safely cleanup markers
+  // Add a new popup to the collection
+  const addPopup = useCallback((popup: any) => {
+    if (!popup) return;
+    
+    popupsRef.current.push(popup);
+    
+    if (mountedRef.current) {
+      setPopups(prev => [...prev, popup]);
+    }
+  }, []);
+  
+  // Add a new marker to the collection
+  const addMarker = useCallback((marker: any) => {
+    if (!marker) return;
+    
+    markersRef.current.push(marker);
+    
+    if (mountedRef.current) {
+      setMarkers(prev => [...prev, marker]);
+    }
+  }, []);
+  
+  // Set all markers at once
+  const setAllMarkers = useCallback((newMarkers: any[]) => {
+    markersRef.current = [...newMarkers];
+    
+    if (mountedRef.current) {
+      setMarkers(newMarkers);
+    }
+  }, []);
+  
+  // Clean up all markers and popups
   const cleanupMarkers = useCallback(() => {
-    if (!mountedRef.current) return;
+    console.log("Cleaning up markers and popups");
     
-    console.log(`Cleaning up ${markers.length} markers and ${popups.length} popups`);
-    
-    markers.forEach(marker => {
+    // Clean up markers
+    markersRef.current.forEach(marker => {
       if (marker) {
         try {
           marker.remove();
@@ -23,9 +52,10 @@ export const useMarkerCleanup = (mountedRef: React.RefObject<boolean>) => {
         }
       }
     });
-    setMarkers([]);
+    markersRef.current = [];
     
-    popups.forEach(popup => {
+    // Clean up popups
+    popupsRef.current.forEach(popup => {
       if (popup) {
         try {
           popup.remove();
@@ -34,30 +64,21 @@ export const useMarkerCleanup = (mountedRef: React.RefObject<boolean>) => {
         }
       }
     });
-    setPopups([]);
-  }, [markers, popups, mountedRef]);
-  
-  // Function to add a popup to the tracked list
-  const addPopup = useCallback((popup: any) => {
-    setPopups(prev => [...prev, popup]);
+    popupsRef.current = [];
+    
+    // Update state if component is still mounted
+    if (mountedRef.current) {
+      setMarkers([]);
+      setPopups([]);
+    }
   }, []);
   
-  // Function to add a marker to the tracked list
-  const addMarker = useCallback((marker: any) => {
-    setMarkers(prev => [...prev, marker]);
-  }, []);
-  
-  // Function to add multiple markers at once
-  const setAllMarkers = useCallback((newMarkers: any[]) => {
-    setMarkers(newMarkers);
-  }, []);
-
   return {
     markers,
     popups,
-    cleanupMarkers,
-    addPopup,
     addMarker,
-    setAllMarkers
+    addPopup,
+    setAllMarkers,
+    cleanupMarkers
   };
 };

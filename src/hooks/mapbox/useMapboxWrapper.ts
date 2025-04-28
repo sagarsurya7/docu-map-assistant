@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Doctor } from '@/types';
 import { useMapbox } from './useMapbox';
@@ -20,6 +21,7 @@ export const useMapboxWrapper = (
   const [mapStabilized, setMapStabilized] = useState(false);
   const lastDoctorsRef = useRef<Doctor[]>(doctors);
   const lastSelectedDoctorRef = useRef<Doctor | null>(selectedDoctor);
+  const prevSelectedDoctorIdRef = useRef<string | null>(null);
   
   // Store onCriticalError in a ref to avoid dependency changes
   const onCriticalErrorRef = useRef<((error: string) => void) | null | undefined>(null);
@@ -103,7 +105,8 @@ export const useMapboxWrapper = (
     isMapInitialized, 
     mapError, 
     updateMarkers, 
-    reinitializeMap 
+    reinitializeMap,
+    flyTo
   } = useMapbox({
     onMapInitialized: handleMapInitialized,
     onMapError: handleMapError,
@@ -135,35 +138,39 @@ export const useMapboxWrapper = (
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isMapInitialized, map, mapStabilized, componentId, updateMarkers]); 
+  }, [isMapInitialized, map, mapStabilized, componentId, updateMarkers, doctors, selectedDoctor]); 
   
-  // Update markers only when selection changes - USE A REF TO TRACK PREVIOUS VALUE
-  const previousSelectedDoctorId = useRef<string | null>(null);
-  
+  // Track selected doctor changes and fly to location
   useEffect(() => {
-    // Skip initial run
-    if (!markersUpdatedRef.current || !mapStabilized || !map || !isMapInitialized) {
+    if (!map || !isMapInitialized || !mapStabilized) {
       return;
     }
-    
-    // Only update if selection actually changed
+
     const currentSelectedId = selectedDoctor?.id || null;
-    if (previousSelectedDoctorId.current === currentSelectedId) {
-      return;
-    }
     
-    // Update the ref
-    previousSelectedDoctorId.current = currentSelectedId;
-    
-    // Don't debounce selection changes - they should be instant
-    if (isMounted.current) {
+    if (prevSelectedDoctorIdRef.current !== currentSelectedId && selectedDoctor) {
+      console.log(`[${componentId}] Doctor selection changed: ${prevSelectedDoctorIdRef.current} -> ${currentSelectedId}`);
+      prevSelectedDoctorIdRef.current = currentSelectedId;
+      
+      // Always update markers when selection changes
       try {
-        updateMarkers(lastDoctorsRef.current, selectedDoctor);
+        updateMarkers(doctors, selectedDoctor);
+        
+        // Explicitly fly to the selected doctor's location
+        if (selectedDoctor?.location) {
+          console.log(`[${componentId}] Flying to doctor: ${selectedDoctor.id} at ${selectedDoctor.location.lat},${selectedDoctor.location.lng}`);
+          
+          setTimeout(() => {
+            if (isMounted.current && map) {
+              flyTo(selectedDoctor.location.lng, selectedDoctor.location.lat);
+            }
+          }, 200);
+        }
       } catch (error) {
-        console.error(`[${componentId}] Error updating markers:`, error);
+        console.error(`[${componentId}] Error updating markers or flying:`, error);
       }
     }
-  }, [selectedDoctor, mapStabilized, map, isMapInitialized, componentId, updateMarkers]);
+  }, [selectedDoctor, map, isMapInitialized, mapStabilized, componentId, updateMarkers, doctors, flyTo]);
 
   useEffect(() => {
     console.log(`[${componentId}] MapboxWrapper mounted`);

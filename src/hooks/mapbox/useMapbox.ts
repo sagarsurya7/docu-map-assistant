@@ -4,7 +4,7 @@ import { Doctor } from '@/types';
 import { UseMapboxProps } from './types';
 import { useMapInitialization } from './useMapInitialization';
 import { useMapMarkers } from './useMapMarkers';
-import { markCleanupInProgress, markCleanupComplete } from './utils';
+import { markCleanupInProgress, markCleanupComplete, isMapValid } from './utils';
 
 export const useMapbox = ({ onMapInitialized, onMapError, componentId = 'unknown' }: UseMapboxProps & { componentId?: string } = {}) => {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -32,6 +32,27 @@ export const useMapbox = ({ onMapInitialized, onMapError, componentId = 'unknown
     updateMarkers: updateMarkersInternal,
     cleanupMarkers
   } = useMapMarkers(map, isMapInitialized, mountedRef);
+  
+  // Fly to a specific location on the map
+  const flyTo = (lng: number, lat: number, zoom: number = 15) => {
+    if (!map || !isMapValid(map)) {
+      console.log(`[${componentId}] Cannot fly to location - map not valid`);
+      return;
+    }
+    
+    try {
+      console.log(`[${componentId}] Flying to location: ${lat},${lng} with zoom ${zoom}`);
+      
+      map.flyTo({
+        center: [lng, lat],
+        zoom: zoom,
+        essential: true,
+        duration: 1000
+      });
+    } catch (error) {
+      console.error(`[${componentId}] Error flying to location:`, error);
+    }
+  };
   
   // Wrapper for updateMarkers to ensure map is passed
   const updateMarkers = (doctors: Doctor[], selectedDoctor: Doctor | null) => {
@@ -120,6 +141,7 @@ export const useMapbox = ({ onMapInitialized, onMapError, componentId = 'unknown
     mapError, 
     setMapError,
     updateMarkers,
-    reinitializeMap
+    reinitializeMap,
+    flyTo
   };
 };
