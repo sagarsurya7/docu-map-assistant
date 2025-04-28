@@ -19,6 +19,9 @@ export function useDoctorsData() {
         
         if (Array.isArray(apiDoctors) && apiDoctors.length > 0) {
           console.log(`Successfully fetched ${apiDoctors.length} doctors from database`);
+          console.log("Cities represented:", [...new Set(apiDoctors.map(doc => doc.city))].join(', '));
+          console.log("Pune doctors count:", apiDoctors.filter(doc => doc.city === 'Pune').length);
+          
           setAllDoctors(apiDoctors);
           setError(null);
           setUsingFallbackData(false);
