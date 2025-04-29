@@ -31,6 +31,18 @@ export const getDoctors = async (filters: DoctorFilters = {}): Promise<Doctor[]>
     }
     
     console.log(`Frontend: Received ${response.data.length} doctors from API`);
+    
+    // Add debugging for Pune doctors
+    const puneDoctors = response.data.filter(doc => doc.city === 'Pune');
+    console.log(`Frontend: Pune doctors count: ${puneDoctors.length}`);
+    if (puneDoctors.length > 0) {
+      console.log('Frontend: Sample Pune doctor:', puneDoctors[0].name, puneDoctors[0].specialty);
+    }
+    
+    // Log all unique cities in the response
+    const cities = [...new Set(response.data.map((doc: Doctor) => doc.city))];
+    console.log('Frontend: Cities in response:', cities.join(', '));
+    
     return response.data;
   } catch (error) {
     console.error('Frontend: Error fetching doctors:', error);
@@ -42,7 +54,7 @@ export const getDoctors = async (filters: DoctorFilters = {}): Promise<Doctor[]>
     }
     throw error;
   }
-};
+}
 
 export const getFilterOptions = async (): Promise<FilterOptions> => {
   console.log('Frontend: Fetching filter options');

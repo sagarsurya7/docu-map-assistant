@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -9,9 +8,17 @@ import ChatInput from './chat/ChatInput';
 import { initialMessages } from '@/utils/chatUtils';
 import { sendChatMessage } from '@/api/chatService';
 import { useToast } from '@/components/ui/use-toast';
+import { Doctor } from '@/types';
 
-const ChatBot: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+interface ChatBotProps {
+  onSeeOnMap?: (doctorId: string, location: { lat: number; lng: number }) => void;
+  allDoctors: Doctor[];
+}
+
+const ChatBot: React.FC<ChatBotProps> = ({ onSeeOnMap, allDoctors }) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    ...initialMessages
+  ])
   const [isTyping, setIsTyping] = useState(false);
   const isMounted = useRef(true);
   const { toast } = useToast();
@@ -37,19 +44,50 @@ const ChatBot: React.FC = () => {
       // Send message to backend
       const response = await sendChatMessage(input);
       
+      if (!response || !response.response) {
+        throw new Error('Invalid response from server');
+      }
+
       if (isMounted.current) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: response.response
-        }]);
+        // Check if the response contains doctor information
+        const doctorMatch = response.response.match(/Dr\. ([^,]+)/);
+        if (doctorMatch) {
+          const doctorName = doctorMatch[1];
+          // Find the doctor in the list
+          const doctor = allDoctors.find(d => d.name === doctorName);
+          if (doctor && doctor.location) {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: response.response,
+              actions: [{
+                type: 'see_on_map',
+                doctorId: doctor.id,
+                doctorName: doctor.name,
+                location: doctor.location
+              }]
+            }]);
+          } else {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: response.response
+            }]);
+          }
+        } else {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: response.response
+          }]);
+        }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to get response from AI. Please try again later.",
-        variant: "destructive"
-      });
       console.error('Chat error:', error);
+      if (isMounted.current) {
+        toast({
+          title: "Error",
+          description: "Failed to get response from AI. Please try again later.",
+          variant: "destructive"
+        });
+      }
     } finally {
       if (isMounted.current) {
         setIsTyping(false);
@@ -70,7 +108,11 @@ const ChatBot: React.FC = () => {
 
       <div className="flex-1 overflow-hidden flex flex-col h-[calc(100%-60px)]">
         <div className="flex-1 overflow-y-auto">
-          <ChatMessageList messages={messages} isTyping={isTyping} />
+          <ChatMessageList 
+            messages={messages} 
+            isTyping={isTyping} 
+            onSeeOnMap={onSeeOnMap}
+          />
         </div>
 
         <CardFooter className="pt-3 px-4 pb-4 bg-white border-t mt-auto z-10 w-full sticky bottom-0">

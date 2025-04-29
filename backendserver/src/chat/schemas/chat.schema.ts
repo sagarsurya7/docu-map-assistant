@@ -8,10 +8,22 @@ export class Chat extends Document {
   message: string;
 
   @Prop({ required: true })
-  response: string;
-
-  @Prop({ default: Date.now })
   timestamp: Date;
+
+  @Prop()
+  location?: string;
+
+  @Prop()
+  symptoms?: string[];
+
+  @Prop()
+  specialty?: string;
+
+  @Prop()
+  response?: string;
+
+  @Prop()
+  sessionId?: string;
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

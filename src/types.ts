@@ -1,4 +1,3 @@
-
 export interface Doctor {
   id: string;
   name: string;
@@ -36,4 +35,13 @@ export interface Doctor {
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  actions?: {
+    type: 'see_on_map';
+    doctorId?: string;
+    doctorName?: string;
+    location?: {
+      lat: number;
+      lng: number;
+    };
+  }[];
 }

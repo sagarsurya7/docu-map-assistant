@@ -28,6 +28,30 @@ const DesktopView: React.FC<DesktopViewProps> = ({
   toggleChatBot,
   toggleDoctorsList
 }) => {
+  const handleSeeOnMap = (doctorId: string, location: { lat: number; lng: number }) => {
+    // Find the doctor in the list
+    const doctor = allDoctors.find(d => d.id === doctorId);
+    if (doctor) {
+      // Update the selected doctor
+      onSelectDoctor(doctor);
+      
+      // Get the map instance from the GoogleMap component
+      const mapElement = document.querySelector('.mapbox-container');
+      if (mapElement && window.mapboxgl) {
+        const map = window.mapboxgl.Map.get(mapElement);
+        if (map) {
+          // Center map on selected doctor with a smooth animation
+          map.flyTo({
+            center: [location.lng, location.lat],
+            zoom: 15,
+            essential: true,
+            duration: 1000
+          });
+        }
+      }
+    }
+  };
+
   return (
     <div className="flex-1 flex overflow-hidden h-full">
       {/* Left Panel: Doctors List */}
@@ -106,11 +130,11 @@ const DesktopView: React.FC<DesktopViewProps> = ({
       </div>
       
       {/* Right Panel: Chat Bot */}
-      <div className={`bg-white ${showChatBot ? 'w-1/4' : 'w-0'} transition-width duration-300 overflow-hidden relative border-l h-full`}>
+      <div className={`${showChatBot ? 'w-1/4' : 'w-0'} transition-width duration-300 h-full relative`}>
         {showChatBot && (
           <>
             <div className="h-full overflow-hidden">
-              <ChatBot />
+              <ChatBot onSeeOnMap={handleSeeOnMap} allDoctors={allDoctors} />
             </div>
             
             <Button 

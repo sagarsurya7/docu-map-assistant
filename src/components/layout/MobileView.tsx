@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -110,7 +109,7 @@ const MobileView: React.FC<MobileViewProps> = ({
             </Button>
           </div>
           <div className="flex-1 overflow-hidden pt-16 flex flex-col h-full">
-            <ChatBot />
+            <ChatBot allDoctors={allDoctors} />
           </div>
         </div>
       )}
