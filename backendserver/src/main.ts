@@ -17,8 +17,8 @@ async function bootstrap() {
     credentials: true,
   });
   
-  // Set global prefix for API endpoints
-  app.setGlobalPrefix('api');
+  // Remove the global prefix since Vite proxy already adds /api
+  // app.setGlobalPrefix('api'); // Commented out to fix double /api issue
   
   // Enable validation
   app.useGlobalPipes(new ValidationPipe({
@@ -27,7 +27,7 @@ async function bootstrap() {
     transform: true,
   }));
   
-  // Setup Swagger documentation
+  // Setup Swagger documentation (update path since no global prefix)
   const config = new DocumentBuilder()
     .setTitle('Doctor Finder API')
     .setDescription('API for finding and managing doctors')
@@ -35,10 +35,12 @@ async function bootstrap() {
     .addTag('doctors')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('docs', app, document); // Changed from 'api/docs' to 'docs'
   
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`Application is running on port ${port}`);
+  console.log(`🚀 Backend server is running on http://localhost:${port}`);
+  console.log(`📚 API documentation available at http://localhost:${port}/docs`);
+  console.log(`🏥 Doctors endpoint: http://localhost:${port}/doctors`);
 }
 bootstrap();
