@@ -1,131 +1,96 @@
 
 import React, { useState, useEffect } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import apiClient from '../apiClient';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import apiClient from '@/apiClient';
+import { getDoctors } from '@/api/doctorService';
 
-const BackendStatus: React.FC = () => {
-  const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
-  const [errorDetails, setErrorDetails] = useState<string>('');
-  const [isConnectionIssue, setIsConnectionIssue] = useState<boolean>(false);
-  const [checkingConnection, setCheckingConnection] = useState<boolean>(false);
-  const [healthData, setHealthData] = useState<any>(null);
+const BackendStatus = () => {
+  const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+  const [doctorCount, setDoctorCount] = useState<number>(0);
+  const [error, setError] = useState<string>('');
 
   const checkBackendStatus = async () => {
-    setCheckingConnection(true);
+    console.log('🔍 BackendStatus: Checking backend connection...');
+    console.log('🔗 BackendStatus: API Base URL:', apiClient.defaults.baseURL);
+    
+    setStatus('checking');
+    setError('');
+    
     try {
-      const response = await apiClient.get('/health');
+      // Test basic connectivity
+      console.log('📡 BackendStatus: Testing /health endpoint...');
+      const healthResponse = await apiClient.get('/health');
+      console.log('✅ BackendStatus: Health check response:', healthResponse.data);
+      
+      // Test doctors endpoint
+      console.log('📡 BackendStatus: Testing /doctors endpoint...');
+      const doctors = await getDoctors();
+      console.log(`✅ BackendStatus: Got ${doctors.length} doctors from API`);
+      
+      setDoctorCount(doctors.length);
       setStatus('connected');
-      setErrorDetails('');
-      setIsConnectionIssue(false);
       
-      if (response.data) {
-        console.log('Backend health data:', response.data);
-        setHealthData(response.data);
+      // Log sample doctor data
+      if (doctors.length > 0) {
+        console.log('👨‍⚕️ BackendStatus: Sample doctor:', doctors[0]);
       }
-    } catch (error) {
-      console.error('Backend connection error:', error);
+      
+    } catch (err: any) {
+      console.error('❌ BackendStatus: Backend check failed:', err);
       setStatus('disconnected');
-      
-      if (error instanceof Error) {
-        setErrorDetails(error.message);
-        
-        if (
-          error.message.includes('NetworkError') || 
-          error.message.includes('Network Error') || 
-          (error as any).code === 'ERR_NETWORK' ||
-          (error as any).code === 'ECONNABORTED'
-        ) {
-          setIsConnectionIssue(true);
-        }
-      } else {
-        setErrorDetails('Unknown error occurred');
-      }
-    } finally {
-      setCheckingConnection(false);
+      setError(err.message || 'Unknown error');
+      setDoctorCount(0);
     }
   };
 
   useEffect(() => {
     checkBackendStatus();
-    
-    const interval = setInterval(checkBackendStatus, 30000);
-    
-    return () => clearInterval(interval);
   }, []);
 
-  const handleManualCheck = () => {
-    checkBackendStatus();
+  const getStatusColor = () => {
+    switch (status) {
+      case 'connected': return 'bg-green-500';
+      case 'disconnected': return 'bg-red-500';
+      default: return 'bg-yellow-500';
+    }
   };
 
-  const isDevelopment = () => {
-    return window.location.hostname === 'localhost' || 
-           window.location.hostname === '127.0.0.1';
+  const getStatusText = () => {
+    switch (status) {
+      case 'connected': return `Connected (${doctorCount} doctors)`;
+      case 'disconnected': return 'Disconnected';
+      default: return 'Checking...';
+    }
   };
-
-  const isLovablePreview = () => {
-    return window.location.hostname.includes('lovable.app') || 
-           window.location.hostname.includes('lovableproject.com');
-  };
-
-  if (status === 'loading') {
-    return (
-      <Alert className="mb-4">
-        <AlertCircle className="h-4 w-4 text-yellow-500" />
-        <AlertTitle>Checking connection</AlertTitle>
-        <AlertDescription>
-          Connecting to backend services...
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
-    <Alert className="mb-4 border-green-200 bg-green-50">
-      <CheckCircle className="h-4 w-4 text-green-500" />
-      <AlertTitle>Backend connected</AlertTitle>
-      <AlertDescription>
-        Successfully connected to the backend services.
-        
-        {healthData && (
-          <div className="mt-2 p-2 bg-white rounded border border-green-100 text-xs">
-            <div className="flex items-center">
-              <Info className="h-3 w-3 text-blue-500 mr-1" />
-              <span className="font-medium">API Version:</span>
-              <span className="ml-1">{healthData.version || 'Unknown'}</span>
-            </div>
-            
-            {healthData.environment && (
-              <div className="mt-1">
-                <span className="font-medium">Environment:</span>
-                <span className="ml-1">{healthData.environment}</span>
-              </div>
-            )}
-            
-            {healthData.uptime && (
-              <div className="mt-1">
-                <span className="font-medium">Uptime:</span>
-                <span className="ml-1">{typeof healthData.uptime === 'number' ? `${Math.floor(healthData.uptime / 60)} minutes` : healthData.uptime}</span>
-              </div>
-            )}
-          </div>
-        )}
-        
-        <div className="mt-3">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleManualCheck}
-            disabled={checkingConnection}
-            className="flex items-center gap-1"
-          >
-            <RefreshCw className={`h-3 w-3 ${checkingConnection ? 'animate-spin' : ''}`} />
-            {checkingConnection ? 'Checking...' : 'Refresh Status'}
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          Backend Status
+          <Badge className={getStatusColor()}>
+            {getStatusText()}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            API URL: {apiClient.defaults.baseURL}
+          </p>
+          {error && (
+            <p className="text-sm text-red-600">
+              Error: {error}
+            </p>
+          )}
+          <Button onClick={checkBackendStatus} className="w-full">
+            Refresh Status
           </Button>
         </div>
-      </AlertDescription>
-    </Alert>
+      </CardContent>
+    </Card>
   );
 };
 

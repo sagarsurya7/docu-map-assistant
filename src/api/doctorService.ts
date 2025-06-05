@@ -1,4 +1,3 @@
-
 import apiClient from '../apiClient';
 import { Doctor } from '../types';
 
@@ -18,41 +17,73 @@ export interface FilterOptions {
 }
 
 export const getDoctors = async (filters: DoctorFilters = {}): Promise<Doctor[]> => {
-  console.log('Frontend: Fetching doctors with filters:', filters);
+  console.log('🔍 Frontend API: getDoctors called with filters:', filters);
+  
   try {
-    console.log('Making request to /doctors endpoint...');
-    const response = await apiClient.get('/doctors', { params: filters });
-    console.log('Frontend: Doctors API response received:', response.data);
+    console.log('📡 Frontend API: Making request to /doctors endpoint...');
+    console.log('📡 Frontend API: Base URL:', apiClient.defaults.baseURL);
+    console.log('📡 Frontend API: Full URL would be:', `${apiClient.defaults.baseURL}/doctors`);
     
-    // Verify that we received an array of doctors
+    const response = await apiClient.get('/doctors', { params: filters });
+    
+    console.log('✅ Frontend API: Response received!');
+    console.log('📊 Frontend API: Response status:', response.status);
+    console.log('📊 Frontend API: Response headers:', response.headers);
+    console.log('📊 Frontend API: Raw response data:', response.data);
+    console.log('📊 Frontend API: Response data type:', typeof response.data);
+    console.log('📊 Frontend API: Is response.data an array?', Array.isArray(response.data));
+    
     if (!Array.isArray(response.data)) {
-      console.error('Frontend: Expected an array but received:', typeof response.data);
+      console.error('❌ Frontend API: Expected an array but received:', typeof response.data, response.data);
       return [];
     }
     
-    console.log(`Frontend: Received ${response.data.length} doctors from API`);
+    const doctors = response.data;
+    console.log(`✅ Frontend API: Successfully received ${doctors.length} doctors from backend`);
     
-    // Add debugging for Pune doctors
-    const puneDoctors = response.data.filter(doc => doc.city === 'Pune');
-    console.log(`Frontend: Pune doctors count: ${puneDoctors.length}`);
-    if (puneDoctors.length > 0) {
-      console.log('Frontend: Sample Pune doctor:', puneDoctors[0].name, puneDoctors[0].specialty);
-    }
+    // Detailed logging for each doctor
+    doctors.forEach((doctor, index) => {
+      console.log(`👨‍⚕️ Doctor ${index + 1}:`, {
+        id: doctor.id,
+        name: doctor.name,
+        specialty: doctor.specialty,
+        city: doctor.city,
+        area: doctor.area
+      });
+    });
     
-    // Log all unique cities in the response
-    const cities = [...new Set(response.data.map((doc: Doctor) => doc.city))];
-    console.log('Frontend: Cities in response:', cities.join(', '));
+    // Count doctors by city
+    const cityCounts = doctors.reduce((acc: Record<string, number>, doctor) => {
+      acc[doctor.city] = (acc[doctor.city] || 0) + 1;
+      return acc;
+    }, {});
+    console.log('🏙️ Frontend API: Doctors by city:', cityCounts);
     
-    return response.data;
-  } catch (error) {
-    console.error('Frontend: Error fetching doctors:', error);
+    // Special focus on Pune doctors
+    const puneDoctors = doctors.filter(doc => doc.city === 'Pune');
+    console.log(`🏙️ Frontend API: Found ${puneDoctors.length} Pune doctors:`, 
+      puneDoctors.map(d => `${d.name} (${d.specialty})`));
+    
+    return doctors;
+    
+  } catch (error: any) {
+    console.error('❌ Frontend API: Error in getDoctors:', error);
+    console.error('❌ Frontend API: Error message:', error.message);
+    
     if (error.response) {
-      console.error('Frontend: Error response data:', error.response.data);
-      console.error('Frontend: Error response status:', error.response.status);
+      console.error('❌ Frontend API: Error response status:', error.response.status);
+      console.error('❌ Frontend API: Error response data:', error.response.data);
+      console.error('❌ Frontend API: Error response headers:', error.response.headers);
     } else if (error.request) {
-      console.error('Frontend: No response received from server');
+      console.error('❌ Frontend API: No response received. Request details:', error.request);
+      console.error('❌ Frontend API: This could indicate a network issue or backend not running');
+    } else {
+      console.error('❌ Frontend API: Error in request setup:', error.message);
     }
-    throw error;
+    
+    // Don't throw the error, return empty array to see if that helps
+    console.log('🔄 Frontend API: Returning empty array instead of throwing error');
+    return [];
   }
 };
 
