@@ -13,60 +13,79 @@ export function useDoctorsData() {
 
   useEffect(() => {
     const fetchDoctors = async () => {
+      console.log("🔄 useDoctorsData: Starting to fetch doctors...");
+      
       try {
-        console.log("Fetching all doctors from database without filters...");
+        console.log("📡 useDoctorsData: Calling getDoctors API...");
         const apiDoctors = await getDoctors();
         
+        console.log("📊 useDoctorsData: API response received:", {
+          isArray: Array.isArray(apiDoctors),
+          length: apiDoctors?.length || 0,
+          firstDoctor: apiDoctors?.[0]?.name || 'none'
+        });
+        
         if (Array.isArray(apiDoctors) && apiDoctors.length > 0) {
-          console.log(`Successfully fetched ${apiDoctors.length} doctors from database`);
-          console.log("Cities represented:", [...new Set(apiDoctors.map(doc => doc.city))].join(', '));
-          console.log("Pune doctors count:", apiDoctors.filter(doc => doc.city === 'Pune').length);
+          const cities = [...new Set(apiDoctors.map(doc => doc.city))];
+          const puneCount = apiDoctors.filter(doc => doc.city === 'Pune').length;
+          
+          console.log("✅ useDoctorsData: Successfully fetched doctors", {
+            total: apiDoctors.length,
+            cities: cities.join(', '),
+            puneCount
+          });
+          
+          if (puneCount > 0) {
+            const puneDoctors = apiDoctors.filter(doc => doc.city === 'Pune');
+            console.log("🏙️ useDoctorsData: Pune doctors found:", puneDoctors.map(d => `${d.name} (${d.specialty})`).join(', '));
+          }
           
           setAllDoctors(apiDoctors);
           setError(null);
           setUsingFallbackData(false);
           
           toast({
-            title: "Connected to Database",
-            description: `Successfully loaded ${apiDoctors.length} doctors.`,
+            title: "✅ Database Connected",
+            description: `Loaded ${apiDoctors.length} doctors (${puneCount} in Pune).`,
           });
         } else {
-          console.log("Database returned no doctors");
+          console.warn("⚠️ useDoctorsData: No doctors returned from API");
           setAllDoctors([]);
           setError("No doctors found in the database");
           setUsingFallbackData(false);
           
           toast({
-            title: "No Doctors Found",
+            title: "⚠️ No Doctors Found",
             description: "The database contains no doctor records.",
             variant: "destructive"
           });
         }
       } catch (err) {
-        console.error("Error fetching doctors:", err);
+        console.error("❌ useDoctorsData: Error fetching doctors:", err);
         setAllDoctors([]);
         setError("Failed to fetch doctors from the database");
         setUsingFallbackData(false);
         
         toast({
-          title: "Database Error",
+          title: "❌ Database Error",
           description: "Could not fetch doctors from the database.",
           variant: "destructive"
         });
       } finally {
         setIsLoading(false);
+        console.log("🏁 useDoctorsData: Fetch complete");
       }
     };
     
     fetchDoctors();
-  }, []); // Only run once on initial load
+  }, []);
 
   const handleSelectDoctor = (doctor: Doctor) => {
     if (doctor && typeof doctor === 'object') {
-      console.log("Selected doctor:", doctor);
+      console.log("👆 useDoctorsData: Doctor selected:", doctor.name, doctor.city);
       setSelectedDoctor(doctor);
     } else {
-      console.error("Invalid doctor object:", doctor);
+      console.error("❌ useDoctorsData: Invalid doctor object:", doctor);
     }
   };
 
@@ -83,11 +102,13 @@ export function useDoctorsData() {
 
   const getSafeDoctors = (): Doctor[] => {
     if (!Array.isArray(allDoctors)) {
-      console.warn("allDoctors is not an array, returning empty array");
+      console.warn("⚠️ useDoctorsData: allDoctors is not an array, returning empty array");
       return [];
     }
     
-    return allDoctors.filter(isValidDoctor);
+    const validDoctors = allDoctors.filter(isValidDoctor);
+    console.log("✅ useDoctorsData: Returning", validDoctors.length, "valid doctors");
+    return validDoctors;
   };
 
   return {

@@ -208,116 +208,89 @@ export class DoctorsService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    // Check if we have any doctors in the database
-    const count = await this.doctorModel.countDocuments();
-    console.log(`Database initialization: Found ${count} doctors in MongoDB`);
+    console.log('🚀 DoctorsService onModuleInit starting...');
     
-    if (count === 0) {
-      console.log('No doctors found in database, seeding with mock data...');
+    // Force clear database and reseed with mock data
+    try {
+      const deleteResult = await this.doctorModel.deleteMany({});
+      console.log('🗑️ Cleared existing doctors:', deleteResult.deletedCount);
       
-      try {
-        // First try to load from JSON file
-        const dataFilePath = path.join(__dirname, '..', '..', 'data', 'doctors.json');
-        
-        if (fs.existsSync(dataFilePath)) {
-          console.log(`Found doctors.json file at: ${dataFilePath}`);
-          const fileData = fs.readFileSync(dataFilePath, 'utf8');
-          const jsonData = JSON.parse(fileData);
-          
-          if (Array.isArray(jsonData) && jsonData.length > 0) {
-            await this.doctorModel.insertMany(jsonData);
-            console.log(`Database seeded with ${jsonData.length} doctors from JSON file`);
-            return;
-          }
-        }
-        
-        // If JSON file doesn't exist or is empty, use mock data
-        console.log('JSON file not found or empty, using mock data...');
-        const mockData = this.getMockData();
-        await this.doctorModel.insertMany(mockData);
-        console.log(`Database seeded with ${mockData.length} mock doctors`);
-        
-        // Log Pune doctors specifically
-        const puneCount = mockData.filter(doc => doc.city === 'Pune').length;
-        console.log(`Mock data includes ${puneCount} Pune doctors`);
-        
-      } catch (error) {
-        console.error('Error seeding the database:', error);
-        
-        // Fallback to mock data if JSON parsing fails
-        try {
-          const mockData = this.getMockData();
-          await this.doctorModel.insertMany(mockData);
-          console.log(`Fallback: Database seeded with ${mockData.length} mock doctors`);
-        } catch (fallbackError) {
-          console.error('Failed to seed with mock data as well:', fallbackError);
-        }
-      }
-    } else {
-      // Log existing Pune doctors
+      const mockData = this.getMockData();
+      console.log('📊 Mock data to insert:', mockData.length, 'doctors');
+      
+      const insertResult = await this.doctorModel.insertMany(mockData);
+      console.log('✅ Successfully inserted', insertResult.length, 'doctors');
+      
+      // Verify insertion
+      const count = await this.doctorModel.countDocuments();
       const puneCount = await this.doctorModel.countDocuments({ city: 'Pune' });
-      console.log(`Database already has data. Pune doctors count: ${puneCount}`);
+      console.log('📈 Total doctors in database:', count);
+      console.log('🏙️ Pune doctors in database:', puneCount);
+      
+      // Log a sample doctor
+      const sampleDoctor = await this.doctorModel.findOne({ city: 'Pune' });
+      if (sampleDoctor) {
+        console.log('👨‍⚕️ Sample Pune doctor:', sampleDoctor.name, '-', sampleDoctor.specialty);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error during database seeding:', error);
     }
   }
 
   async findAll(filters: DoctorFilterDto = {}): Promise<DoctorDto[]> {
-    console.log('Executing MongoDB query with filters:', filters);
+    console.log('🔍 findAll called with filters:', JSON.stringify(filters));
     
-    let query = this.doctorModel.find();
-    
-    // Add this for debugging
-    console.log('MongoDB query before filters:', JSON.stringify(query.getFilter()));
-
-    if (filters.search) {
-      const searchRegex = new RegExp(filters.search, 'i');
-      query = query.or([
-        { name: searchRegex },
-        { specialty: searchRegex },
-        { area: searchRegex },
-        { city: searchRegex }
-      ]);
-    }
-
-    if (filters.specialty) {
-      query = query.where('specialty').equals(filters.specialty);
-    }
-
-    if (filters.city) {
-      query = query.where('city').equals(filters.city);
-    }
-
-    if (filters.area) {
-      query = query.where('area').equals(filters.area);
-    }
-
-    if (filters.rating) {
-      query = query.where('rating').gte(filters.rating);
-    }
-
-    if (filters.available !== undefined) {
-      query = query.where('available').equals(filters.available);
-    }
-
-    // Add this for debugging
-    console.log('MongoDB query after filters:', JSON.stringify(query.getFilter()));
-
     try {
+      const totalCount = await this.doctorModel.countDocuments();
+      console.log('📊 Total doctors in database before query:', totalCount);
+      
+      let query = this.doctorModel.find();
+      
+      if (filters.search) {
+        const searchRegex = new RegExp(filters.search, 'i');
+        query = query.or([
+          { name: searchRegex },
+          { specialty: searchRegex },
+          { area: searchRegex },
+          { city: searchRegex }
+        ]);
+      }
+
+      if (filters.specialty) {
+        query = query.where('specialty').equals(filters.specialty);
+      }
+
+      if (filters.city) {
+        query = query.where('city').equals(filters.city);
+      }
+
+      if (filters.area) {
+        query = query.where('area').equals(filters.area);
+      }
+
+      if (filters.rating) {
+        query = query.where('rating').gte(filters.rating);
+      }
+
+      if (filters.available !== undefined) {
+        query = query.where('available').equals(filters.available);
+      }
+
       const doctors = await query.exec();
-      console.log(`Query returned ${doctors.length} results from MongoDB`);
+      console.log('✅ Query returned', doctors.length, 'doctors');
       
       // Log Pune doctors specifically
       const puneResults = doctors.filter(doc => doc.city === 'Pune');
-      console.log(`Query returned ${puneResults.length} Pune doctors`);
+      console.log('🏙️ Pune doctors in results:', puneResults.length);
       
-      if (doctors.length === 0) {
-        console.log('No doctors found. Checking if database has any doctors...');
-        const totalDoctors = await this.doctorModel.countDocuments();
-        console.log(`Total doctors in database: ${totalDoctors}`);
+      if (puneResults.length > 0) {
+        console.log('👨‍⚕️ First Pune doctor:', puneResults[0].name, '-', puneResults[0].specialty);
       }
       
       return doctors;
     } catch (error) {
-      console.error('Error executing MongoDB query:', error);
+      console.error('❌ Error in findAll:', error);
       throw error;
     }
   }
