@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/Header';
@@ -32,9 +33,19 @@ const Index = () => {
   const toggleChatBot = () => setShowChatBot(!showChatBot);
   const toggleDoctorsList = () => setShowDoctorsList(!showDoctorsList);
   
+  // Debug logging for home screen
+  useEffect(() => {
+    console.log("🏠 Index page: Component mounted");
+    console.log("🏠 Index page: isLoading:", isLoading);
+    console.log("🏠 Index page: allDoctors:", allDoctors);
+    console.log("🏠 Index page: allDoctors length:", allDoctors?.length || 0);
+    console.log("🏠 Index page: error:", error);
+  }, [isLoading, allDoctors, error]);
+  
   // Handle data errors
   useEffect(() => {
     if (error) {
+      console.error("🏠 Index page: Error detected:", error);
       toast({
         title: "Data Error",
         description: error,
@@ -45,6 +56,15 @@ const Index = () => {
 
   // Ensure allDoctors is always an array
   const safeDoctors = Array.isArray(allDoctors) ? allDoctors : [];
+  
+  // Log safe doctors
+  useEffect(() => {
+    console.log("🏠 Index page: safeDoctors:", safeDoctors);
+    console.log("🏠 Index page: safeDoctors length:", safeDoctors.length);
+    if (safeDoctors.length > 0) {
+      console.log("🏠 Index page: First doctor:", safeDoctors[0]);
+    }
+  }, [safeDoctors]);
   
   // Reset mobile view to list when switching between mobile and desktop
   useEffect(() => {
@@ -62,6 +82,7 @@ const Index = () => {
         />
         
         <div className="container mx-auto px-4 py-2">
+          <BackendStatus />
           
           <div className="mb-3">
             <Button asChild>
@@ -70,6 +91,15 @@ const Index = () => {
                 Symptom Analyzer
               </Link>
             </Button>
+          </div>
+          
+          {/* Debug information */}
+          <div className="mb-3 p-3 bg-gray-100 rounded text-xs">
+            <div>🔍 Debug Info:</div>
+            <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+            <div>Doctors Count: {safeDoctors.length}</div>
+            <div>Error: {error || 'None'}</div>
+            <div>Selected Doctor: {selectedDoctor?.name || 'None'}</div>
           </div>
         </div>
         
@@ -82,6 +112,7 @@ const Index = () => {
               allDoctors={safeDoctors}
               selectedDoctor={selectedDoctor}
               handleSelectDoctor={(doctor) => {
+                console.log("🏠 Index page: Doctor selected:", doctor);
                 handleSelectDoctor(doctor);
                 if (isMobile) {
                   setMobileView('map');
@@ -93,7 +124,10 @@ const Index = () => {
               isLoading={isLoading}
               allDoctors={safeDoctors}
               selectedDoctor={selectedDoctor}
-              onSelectDoctor={handleSelectDoctor}
+              onSelectDoctor={(doctor) => {
+                console.log("🏠 Index page: Doctor selected:", doctor);
+                handleSelectDoctor(doctor);
+              }}
               showChatBot={showChatBot}
               showDoctorsList={showDoctorsList}
               toggleChatBot={toggleChatBot}
