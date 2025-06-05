@@ -1,5 +1,4 @@
-
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { DoctorsService } from './doctors.service';
 import { DoctorDto, DoctorFilterDto } from './dto/doctor.dto';
 
@@ -25,7 +24,11 @@ export class DoctorsController {
       return result;
     } catch (error) {
       console.error('DoctorsController: Error in findAll endpoint:', error);
-      throw error;
+      console.error('DoctorsController: Full error details:', error.message, error.stack);
+      throw new HttpException(
+        `Failed to fetch doctors: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -39,7 +42,11 @@ export class DoctorsController {
       return result;
     } catch (error) {
       console.error('DoctorsController: Error in getFilterOptions endpoint:', error);
-      throw error;
+      console.error('DoctorsController: Full error details:', error.message, error.stack);
+      throw new HttpException(
+        `Failed to fetch filter options: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -52,7 +59,10 @@ export class DoctorsController {
       return result;
     } catch (error) {
       console.error(`DoctorsController: Error in findOne endpoint for id ${id}:`, error);
-      throw error;
+      throw new HttpException(
+        `Failed to fetch doctor: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -65,7 +75,10 @@ export class DoctorsController {
       return result;
     } catch (error) {
       console.error('DoctorsController: Error in create endpoint:', error);
-      throw error;
+      throw new HttpException(
+        `Failed to create doctor: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -78,7 +91,10 @@ export class DoctorsController {
       return result;
     } catch (error) {
       console.error(`DoctorsController: Error in update endpoint for id ${id}:`, error);
-      throw error;
+      throw new HttpException(
+        `Failed to update doctor: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -91,7 +107,10 @@ export class DoctorsController {
       return result;
     } catch (error) {
       console.error(`DoctorsController: Error in remove endpoint for id ${id}:`, error);
-      throw error;
+      throw new HttpException(
+        `Failed to remove doctor: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
   
@@ -104,7 +123,10 @@ export class DoctorsController {
       return { message: 'All doctors removed from database' };
     } catch (error) {
       console.error('DoctorsController: Error in removeAll endpoint:', error);
-      throw error;
+      throw new HttpException(
+        `Failed to remove all doctors: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

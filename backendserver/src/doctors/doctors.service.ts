@@ -210,8 +210,18 @@ export class DoctorsService implements OnModuleInit {
   async onModuleInit() {
     console.log('🚀 DoctorsService onModuleInit starting...');
     
-    // Force clear database and reseed with mock data
     try {
+      // Check if database is connected
+      const connectionState = this.doctorModel.db.readyState;
+      console.log('📊 Database connection state:', connectionState);
+      
+      if (connectionState !== 1) {
+        console.warn('⚠️ Database not connected, waiting...');
+        // Wait for connection
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+      // Force clear database and reseed with mock data
       const deleteResult = await this.doctorModel.deleteMany({});
       console.log('🗑️ Cleared existing doctors:', deleteResult.deletedCount);
       
@@ -235,6 +245,7 @@ export class DoctorsService implements OnModuleInit {
       
     } catch (error) {
       console.error('❌ Error during database seeding:', error);
+      console.error('❌ Full error details:', error.message, error.stack);
     }
   }
 
@@ -242,8 +253,22 @@ export class DoctorsService implements OnModuleInit {
     console.log('🔍 findAll called with filters:', JSON.stringify(filters));
     
     try {
+      // Check database connection
+      const connectionState = this.doctorModel.db.readyState;
+      console.log('📊 Database connection state during query:', connectionState);
+      
+      if (connectionState !== 1) {
+        console.error('❌ Database not connected, returning mock data');
+        return this.getMockData();
+      }
+      
       const totalCount = await this.doctorModel.countDocuments();
       console.log('📊 Total doctors in database before query:', totalCount);
+      
+      if (totalCount === 0) {
+        console.warn('⚠️ No doctors in database, inserting mock data');
+        await this.doctorModel.insertMany(this.getMockData());
+      }
       
       let query = this.doctorModel.find();
       
@@ -291,11 +316,67 @@ export class DoctorsService implements OnModuleInit {
       return doctors;
     } catch (error) {
       console.error('❌ Error in findAll:', error);
-      throw error;
+      console.error('❌ Returning mock data as fallback');
+      return this.getMockData();
     }
   }
 
-  // Helper method to clear all doctors from database
+  async getFilterOptions(): Promise<FilterOptionsDto> {
+    console.log('🔍 getFilterOptions called');
+    
+    try {
+      // Check database connection
+      const connectionState = this.doctorModel.db.readyState;
+      console.log('📊 Database connection state during filter options query:', connectionState);
+      
+      if (connectionState !== 1) {
+        console.error('❌ Database not connected, returning mock filter options');
+        const mockData = this.getMockData();
+        return {
+          specialties: [...new Set(mockData.map(d => d.specialty))],
+          cities: [...new Set(mockData.map(d => d.city))],
+          areas: [...new Set(mockData.map(d => d.area))]
+        };
+      }
+      
+      const totalCount = await this.doctorModel.countDocuments();
+      console.log('📊 Total doctors for filter options:', totalCount);
+      
+      if (totalCount === 0) {
+        console.warn('⚠️ No doctors for filter options, using mock data');
+        const mockData = this.getMockData();
+        return {
+          specialties: [...new Set(mockData.map(d => d.specialty))],
+          cities: [...new Set(mockData.map(d => d.city))],
+          areas: [...new Set(mockData.map(d => d.area))]
+        };
+      }
+      
+      const [specialties, cities, areas] = await Promise.all([
+        this.doctorModel.distinct('specialty'),
+        this.doctorModel.distinct('city'),
+        this.doctorModel.distinct('area')
+      ]);
+
+      console.log('✅ Filter options retrieved:', { specialties: specialties.length, cities: cities.length, areas: areas.length });
+
+      return { 
+        specialties, 
+        cities, 
+        areas: areas.filter(Boolean) 
+      };
+    } catch (error) {
+      console.error('❌ Error in getFilterOptions:', error);
+      console.error('❌ Returning mock filter options as fallback');
+      const mockData = this.getMockData();
+      return {
+        specialties: [...new Set(mockData.map(d => d.specialty))],
+        cities: [...new Set(mockData.map(d => d.city))],
+        areas: [...new Set(mockData.map(d => d.area))]
+      };
+    }
+  }
+
   async clearAllDoctors(): Promise<void> {
     try {
       const result = await this.doctorModel.deleteMany({});
@@ -308,41 +389,45 @@ export class DoctorsService implements OnModuleInit {
 
   async findOne(id: string): Promise<DoctorDto | undefined> {
     console.log(`Looking up doctor with ID: ${id}`);
-    return this.doctorModel.findOne({ id }).exec();
-  }
-
-  async getFilterOptions(): Promise<FilterOptionsDto> {
-    console.log('Retrieving filter options from database...');
-    
-    const [specialties, cities, areas] = await Promise.all([
-      this.doctorModel.distinct('specialty'),
-      this.doctorModel.distinct('city'),
-      this.doctorModel.distinct('area')
-    ]);
-
-    return { 
-      specialties, 
-      cities, 
-      areas: areas.filter(Boolean) 
-    };
+    try {
+      return this.doctorModel.findOne({ id }).exec();
+    } catch (error) {
+      console.error(`Error finding doctor with ID ${id}:`, error);
+      return undefined;
+    }
   }
 
   async create(doctorDto: DoctorDto): Promise<DoctorDto> {
     console.log('Creating new doctor record:', doctorDto.name);
-    const newDoctor = new this.doctorModel(doctorDto);
-    return newDoctor.save();
+    try {
+      const newDoctor = new this.doctorModel(doctorDto);
+      return newDoctor.save();
+    } catch (error) {
+      console.error('Error creating doctor:', error);
+      throw error;
+    }
   }
 
   async update(id: string, doctorDto: Partial<DoctorDto>): Promise<DoctorDto | undefined> {
     console.log(`Updating doctor with ID: ${id}`);
-    return this.doctorModel
-      .findOneAndUpdate({ id }, doctorDto, { new: true })
-      .exec();
+    try {
+      return this.doctorModel
+        .findOneAndUpdate({ id }, doctorDto, { new: true })
+        .exec();
+    } catch (error) {
+      console.error(`Error updating doctor with ID ${id}:`, error);
+      return undefined;
+    }
   }
 
   async remove(id: string): Promise<boolean> {
     console.log(`Deleting doctor with ID: ${id}`);
-    const result = await this.doctorModel.deleteOne({ id }).exec();
-    return result.deletedCount > 0;
+    try {
+      const result = await this.doctorModel.deleteOne({ id }).exec();
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error(`Error removing doctor with ID ${id}:`, error);
+      return false;
+    }
   }
 }
